@@ -26,13 +26,13 @@ import (
 
 type Account struct {
 	CloudName        string   `json:"cloudName"`
-	HomeTenantId     string   `json:"homeTenantId"`
-	Id               string   `json:"id"`
+	HomeTenantID     string   `json:"homeTenantId"`
+	ID               string   `json:"id"`
 	IsDefault        bool     `json:"isDefault"`
 	ManagedByTenants []string `json:"managedByTenants"`
 	Name             string   `json:"name"`
 	State            string   `json:"state"`
-	TenantId         string   `json:"tenantId"`
+	TenantID         string   `json:"tenantId"`
 	User             struct {
 		Name        string `json:"name"`
 		AccountType string `json:"type"`
@@ -48,22 +48,26 @@ func GetAzureAccounts() []byte {
 	args := []string{"account", "list", "-o", "json"}
 
 	out, err := exec.Command(binary, args...).CombinedOutput()
+	// TODO: This currently breaks when selecting context
 	if err != nil {
 		panic(err)
 	}
 
-	return []byte(out)
+	return out
 }
 
-func SetAzureAccountContext(AccountName string) {
+func SetAzureAccountContext(accountname string) {
 	binary, errLook := exec.LookPath("az")
 	if errLook != nil {
 		panic(errLook)
 	}
 
-	args := []string{"account", "set", "--subscription", AccountName}
+	args := []string{"account", "set", "--subscription", accountname}
 
-	exec.Command(binary, args...).CombinedOutput()
+	_, err := exec.Command(binary, args...).Output()
+	if err != nil {
+		panic(err.Error())
+	}
 }
 
 func SelectAzureAccountsDisplayName() {
@@ -73,11 +77,14 @@ func SelectAzureAccountsDisplayName() {
 	if err != nil {
 		panic(err)
 	}
-	idx, _ := fuzzyfinder.Find(
+	idx, errFind := fuzzyfinder.Find(
 		Accounts,
 		func(i int) string {
-			return fmt.Sprintf("%s", Accounts[i].Name)
+			return string(Accounts[i].Name)
 		})
+	if errFind != nil {
+		panic(errFind)
+	}
 	SetAzureAccountContext(Accounts[idx].Name)
-	fmt.Println("Azure Context;\n", Accounts[idx].Name, "-", Accounts[idx].Id)
+	fmt.Println("Azure Context;\n", Accounts[idx].Name, "-", Accounts[idx].ID)
 }
