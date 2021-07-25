@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import aztx "github.com/riweston/aztx/cmd"
+import aztx "github.com/riweston/aztx/cmd/aztx"
 
 func main() {
 	aztx.SelectAzureAccountsDisplayName()
