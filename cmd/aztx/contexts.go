@@ -24,10 +24,6 @@ import (
 	"github.com/ktr0731/go-fuzzyfinder"
 )
 
-type Accounts struct {
-	Accounts []Account
-}
-
 type Account struct {
 	CloudName        string   `json:"cloudName"`
 	HomeTenantId     string   `json:"homeTenantId"`
