@@ -80,7 +80,7 @@ func SelectAzureAccountsDisplayName() {
 	idx, errFind := fuzzyfinder.Find(
 		Accounts,
 		func(i int) string {
-			return string(Accounts[i].Name)
+			return Accounts[i].Name
 		})
 	if errFind != nil {
 		panic(errFind)
