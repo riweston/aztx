@@ -66,16 +66,6 @@ func SetAzureAccountContext(AccountName string) {
 	exec.Command(binary, args...).CombinedOutput()
 }
 
-func DisplayAzureAccountsDisplayName() {
-	d := GetAzureAccounts()
-	var Accounts []Account
-	err := json.Unmarshal(d, &Accounts)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%#v", Accounts)
-}
-
 func SelectAzureAccountsDisplayName() {
 	d := GetAzureAccounts()
 	var Accounts []Account
