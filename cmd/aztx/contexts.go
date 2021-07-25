@@ -87,16 +87,7 @@ func SelectAzureAccountsDisplayName() {
 		Accounts,
 		func(i int) string {
 			return fmt.Sprintf("%s", Accounts[i].Name)
-		}, fuzzyfinder.WithPreviewWindow(func(i, width, _ int) string {
-			if i == -1 {
-				return "no results"
-			}
-			s := fmt.Sprintf("%s is selected", Accounts[i].Name)
-			if width < len([]rune(s)) {
-				return Accounts[i].Name
-			}
-			return s
-		}))
+		})
 	SetAzureAccountContext(Accounts[idx].Name)
 	fmt.Println("Azure Context;\n", Accounts[idx].Name, "-", Accounts[idx].Id)
 }
