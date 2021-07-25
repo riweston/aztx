@@ -55,6 +55,17 @@ func GetAzureAccounts() []byte {
 	return []byte(out)
 }
 
+func SetAzureAccountContext(AccountName string) {
+	binary, errLook := exec.LookPath("az")
+	if errLook != nil {
+		panic(errLook)
+	}
+
+	args := []string{"account", "set", "--subscription", AccountName}
+
+	exec.Command(binary, args...).CombinedOutput()
+}
+
 func DisplayAzureAccountsDisplayName() {
 	d := GetAzureAccounts()
 	var Accounts []Account
