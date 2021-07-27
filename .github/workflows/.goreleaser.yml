@@ -5,7 +5,6 @@ brews:
       # Optionally a token can be provided, if it differs from the token provided to GoReleaser
       token: "{{ .Env.HOMEBREW }}"
     url_template: "https://github.com/riweston/aztx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    download_strategy: CurlDownloadStrategy.
     commit_author:
       name: goreleaserbot
       email: goreleaser@riweston.io
