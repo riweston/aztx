@@ -1,4 +1,4 @@
-package aztx_test
+package aztx
 
 import (
 	"os/exec"
