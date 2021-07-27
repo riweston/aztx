@@ -27,3 +27,4 @@ jobs:
           args: release --rm-dist --config .github/workflows/.goreleaser.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW: ${{ secrets.HOMEBREW }}
