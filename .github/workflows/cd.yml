@@ -9,11 +9,7 @@ on:
 jobs:
   goreleaser:
     name: Release
-    strategy:
-      matrix:
-        go-version: [1.15.x, 1.16.x]
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
