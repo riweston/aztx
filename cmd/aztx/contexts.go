@@ -86,5 +86,5 @@ func SelectAzureAccountsDisplayName() {
 		panic(errFind)
 	}
 	SetAzureAccountContext(Accounts[idx].Name)
-	fmt.Println("Azure Context;\n", Accounts[idx].Name, "-", Accounts[idx].ID)
+	fmt.Print(Accounts[idx].Name, "\n", Accounts[idx].ID, "\n")
 }
