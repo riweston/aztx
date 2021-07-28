@@ -1,5 +1,4 @@
 ---
-name: Continuous Deployment
 name: "Continuous Deployment: Tagging"
 
 on:
@@ -28,7 +27,7 @@ on:
     tags:
       - "*"
   workflow_run:
-    workflows: ["Continuous Integration"]
+    workflows: ["Continuous Deployment: Tagging"]
     types: [completed]
 
 jobs:
