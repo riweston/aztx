@@ -16,9 +16,9 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          ssh-key: "${{ secrets.DEPLOY_KEY }}"
       - name: Bump version and push tag
-        uses: anothrNick/github-tag-action@1.26.0
+        uses: anothrNick/github-tag-action@1.35.0
         env:
-          GITHUB_TOKEN: ${{ secrets.DEPLOY_KEY }}
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW }}
           WITH_V: false
+          RELEASE_BRANCHES: "hotfix.*"
