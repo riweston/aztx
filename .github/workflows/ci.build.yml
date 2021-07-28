@@ -1,0 +1,22 @@
+---
+name: "Continuous Integration: Build Test Binary (no release)"
+
+on:
+  pull_request:
+
+jobs:
+  goreleaser:
+    name: "CI: Build Test Release"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+      - name: Build a test release
+        run: |
+          go build .
