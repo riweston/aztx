@@ -5,13 +5,9 @@ on:
   push:
     tags:
       - "*"
-  workflow_run:
-    workflows: ["Continuous Deployment: Tagging"]
-    types: [completed]
 
 jobs:
   goreleaser:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: "CD: Release"
     runs-on: ubuntu-latest
     steps:
