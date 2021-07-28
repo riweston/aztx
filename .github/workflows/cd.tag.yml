@@ -2,9 +2,10 @@
 name: "Continuous Deployment: Tagging"
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
+#  push:
+#    branches:
+#      - master
 
 jobs:
   versionbumper:
@@ -15,6 +16,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+          ssh-key: "${{ secrets.DEPLOY_KEY }}"
       - name: Bump version and push tag
         id: tag_version
         uses: mathieudutour/github-tag-action@v5.6
