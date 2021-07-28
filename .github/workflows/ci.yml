@@ -48,6 +48,7 @@ name: "Continuous Integration: Build Test Binary (no release)"
 
 on:
   pull_request:
+  push:
   workflow_run:
     workflows: ["Continuous Integration: Linting/Go Tests"]
     types: [completed]
