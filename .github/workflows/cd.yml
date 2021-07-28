@@ -6,7 +6,7 @@ on:
     branches:
       - master
   workflow_run:
-    workflows: ["Continuous Integration"]
+    workflows: ["Continuous Integration: Linting/Go Tests"]
     types: [completed]
 
 jobs:
