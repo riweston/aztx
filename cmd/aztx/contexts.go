@@ -21,22 +21,28 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/google/uuid"
 	"github.com/ktr0731/go-fuzzyfinder"
 )
 
-type Account struct {
-	CloudName        string   `json:"cloudName"`
-	HomeTenantID     string   `json:"homeTenantId"`
-	ID               string   `json:"id"`
-	IsDefault        bool     `json:"isDefault"`
-	ManagedByTenants []string `json:"managedByTenants"`
-	Name             string   `json:"name"`
-	State            string   `json:"state"`
-	TenantID         string   `json:"tenantId"`
+type Subscription struct {
+	CloudName        string    `json:"cloudName"`
+	HomeTenantID     uuid.UUID `json:"homeTenantId"`
+	ID               uuid.UUID `json:"id"`
+	IsDefault        bool      `json:"isDefault"`
+	ManagedByTenants []string  `json:"managedByTenants"`
+	Name             string    `json:"name"`
+	State            string    `json:"state"`
+	TenantID         uuid.UUID `json:"tenantId"`
 	User             struct {
 		Name        string `json:"name"`
 		AccountType string `json:"type"`
 	} `json:"user"`
+}
+
+type File struct {
+	InstallationID uuid.UUID `json:"installationId"`
+	Subscriptions  []Subscription
 }
 
 func GetAzureAccounts() []byte {
@@ -72,7 +78,7 @@ func SetAzureAccountContext(accountname string) {
 
 func SelectAzureAccountsDisplayName() {
 	d := GetAzureAccounts()
-	var Accounts []Account
+	var Accounts []Subscription
 	err := json.Unmarshal(d, &Accounts)
 	if err != nil {
 		panic(err)
