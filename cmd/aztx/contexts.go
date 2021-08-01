@@ -104,6 +104,6 @@ func WriteAzureProfile(file File, id uuid.UUID, outFile string) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(outFile, byteValue, 0644)
+	err = ioutil.WriteFile(outFile, byteValue, 0600)
 	return err
 }
