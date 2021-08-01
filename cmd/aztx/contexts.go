@@ -48,7 +48,10 @@ type File struct {
 }
 
 func SelectAzureAccountsDisplayName() {
-	home, _ := os.UserHomeDir()
+	home, errHome := os.UserHomeDir()
+	if errHome != nil {
+		panic(errHome)
+	}
 	azureProfile := home + "/.azure/azureProfile.json"
 	d := ReadAzureProfile(azureProfile)
 
@@ -57,11 +60,14 @@ func SelectAzureAccountsDisplayName() {
 		func(i int) string {
 			return d.Subscriptions[i].Name
 		})
-	if errFind == nil {
+	if errFind != nil {
 		panic(errFind)
 	}
 
-	WriteAzureProfile(d, d.Subscriptions[idx].ID, azureProfile)
+	errWrite := WriteAzureProfile(d, d.Subscriptions[idx].ID, azureProfile)
+	if errWrite != nil {
+		panic(errWrite)
+	}
 	fmt.Print(d.Subscriptions[idx].Name, "\n", d.Subscriptions[idx].ID, "\n")
 }
 
@@ -70,11 +76,14 @@ func ReadAzureProfile(file string) File {
 	if err != nil {
 		fmt.Println(err)
 	}
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, errByte := ioutil.ReadAll(jsonFile)
+	if errByte != nil {
+		fmt.Println(errByte)
+	}
 	byteValue = bytes.TrimPrefix(byteValue, []byte("\xef\xbb\xbf"))
 	var jsonData File
-	errJson := json.Unmarshal(byteValue, &jsonData)
-	if errJson != nil {
+	errJSON := json.Unmarshal(byteValue, &jsonData)
+	if errJSON != nil {
 		fmt.Println(err)
 	}
 
@@ -82,7 +91,7 @@ func ReadAzureProfile(file string) File {
 }
 
 func WriteAzureProfile(file File, id uuid.UUID, outFile string) error {
-	for idx, _ := range file.Subscriptions {
+	for idx := range file.Subscriptions {
 		if file.Subscriptions[idx].ID == id {
 			file.Subscriptions[idx].IsDefault = true
 		}
@@ -93,6 +102,6 @@ func WriteAzureProfile(file File, id uuid.UUID, outFile string) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(outFile, byteValue, 0666)
+	err = ioutil.WriteFile(outFile, byteValue, 0644)
 	return err
 }
