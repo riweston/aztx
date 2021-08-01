@@ -28,7 +28,7 @@ import (
 )
 
 type Subscription struct {
-	CloudName        string    `json:"cloudName"`
+	EnvironmentName  string    `json:"environmentName"`
 	HomeTenantID     uuid.UUID `json:"homeTenantId"`
 	ID               uuid.UUID `json:"id"`
 	IsDefault        bool      `json:"isDefault"`
