@@ -19,6 +19,8 @@ package aztx
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"os/exec"
 
 	"github.com/google/uuid"
@@ -94,3 +96,19 @@ func SelectAzureAccountsDisplayName() {
 	SetAzureAccountContext(Accounts[idx].Name)
 	fmt.Print(Accounts[idx].Name, "\n", Accounts[idx].ID, "\n")
 }
+
+func ReadAzureProfile(file string) File {
+	jsonFile, err := os.Open(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+	var jsonData File
+	errJson := json.Unmarshal(byteValue, &jsonData)
+	if errJson != nil {
+		fmt.Println(err)
+	}
+
+	return jsonData
+}
+
