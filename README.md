@@ -29,8 +29,17 @@
 
 ## Install
 
+### Source
+
 ```sh
 go install github.com/riweston/aztx
+```
+
+### brew
+
+```sh
+brew tap riweston/aztx
+brew install aztx
 ```
 
 ## Usage
