@@ -94,6 +94,8 @@ func WriteAzureProfile(file File, id uuid.UUID, outFile string) error {
 	for idx := range file.Subscriptions {
 		if file.Subscriptions[idx].ID == id {
 			file.Subscriptions[idx].IsDefault = true
+		} else {
+			file.Subscriptions[idx].IsDefault = false
 		}
 	}
 
