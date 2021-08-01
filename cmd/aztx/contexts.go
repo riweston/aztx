@@ -17,11 +17,11 @@ limitations under the License.
 package aztx
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 
 	"github.com/google/uuid"
 	"github.com/ktr0731/go-fuzzyfinder"
@@ -43,60 +43,26 @@ type Subscription struct {
 }
 
 type File struct {
-	InstallationID uuid.UUID `json:"installationId"`
-	Subscriptions  []Subscription
-}
-
-func GetAzureAccounts() []byte {
-	binary, errLook := exec.LookPath("az")
-	if errLook != nil {
-		panic(errLook)
-	}
-
-	args := []string{"account", "list", "-o", "json"}
-
-	out, err := exec.Command(binary, args...).CombinedOutput()
-	// TODO: This currently breaks when selecting context
-	if err != nil {
-		panic(err)
-	}
-
-	return out
-}
-
-func SetAzureAccountContext(accountname string) {
-	binary, errLook := exec.LookPath("az")
-	if errLook != nil {
-		panic(errLook)
-	}
-
-	args := []string{"account", "set", "--subscription", accountname}
-
-	_, err := exec.Command(binary, args...).Output()
-	if err != nil {
-		panic(err.Error())
-	}
 	InstallationID uuid.UUID      `json:"installationId"`
 	Subscriptions  []Subscription `json:"subscriptions"`
 }
 
 func SelectAzureAccountsDisplayName() {
-	d := GetAzureAccounts()
-	var Accounts []Subscription
-	err := json.Unmarshal(d, &Accounts)
-	if err != nil {
-		panic(err)
-	}
+	home, _ := os.UserHomeDir()
+	azureProfile := home + "/.azure/azureProfile.json"
+	d := ReadAzureProfile(azureProfile)
+
 	idx, errFind := fuzzyfinder.Find(
-		Accounts,
+		d.Subscriptions,
 		func(i int) string {
-			return Accounts[i].Name
+			return d.Subscriptions[i].Name
 		})
-	if errFind != nil {
+	if errFind == nil {
 		panic(errFind)
 	}
-	SetAzureAccountContext(Accounts[idx].Name)
-	fmt.Print(Accounts[idx].Name, "\n", Accounts[idx].ID, "\n")
+
+	WriteAzureProfile(d, d.Subscriptions[idx].ID, azureProfile)
+	fmt.Print(d.Subscriptions[idx].Name, "\n", d.Subscriptions[idx].ID, "\n")
 }
 
 func ReadAzureProfile(file string) File {
