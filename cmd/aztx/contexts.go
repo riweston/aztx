@@ -17,74 +17,93 @@ limitations under the License.
 package aztx
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"os/exec"
+	"io/ioutil"
+	"os"
 
+	"github.com/google/uuid"
 	"github.com/ktr0731/go-fuzzyfinder"
 )
 
-type Account struct {
-	CloudName        string   `json:"cloudName"`
-	HomeTenantID     string   `json:"homeTenantId"`
-	ID               string   `json:"id"`
-	IsDefault        bool     `json:"isDefault"`
-	ManagedByTenants []string `json:"managedByTenants"`
-	Name             string   `json:"name"`
-	State            string   `json:"state"`
-	TenantID         string   `json:"tenantId"`
+type Subscription struct {
+	EnvironmentName  string    `json:"environmentName"`
+	HomeTenantID     uuid.UUID `json:"homeTenantId"`
+	ID               uuid.UUID `json:"id"`
+	IsDefault        bool      `json:"isDefault"`
+	ManagedByTenants []string  `json:"managedByTenants"`
+	Name             string    `json:"name"`
+	State            string    `json:"state"`
+	TenantID         uuid.UUID `json:"tenantId"`
 	User             struct {
 		Name        string `json:"name"`
 		AccountType string `json:"type"`
 	} `json:"user"`
 }
 
-func GetAzureAccounts() []byte {
-	binary, errLook := exec.LookPath("az")
-	if errLook != nil {
-		panic(errLook)
-	}
-
-	args := []string{"account", "list", "-o", "json"}
-
-	out, err := exec.Command(binary, args...).CombinedOutput()
-	// TODO: This currently breaks when selecting context
-	if err != nil {
-		panic(err)
-	}
-
-	return out
-}
-
-func SetAzureAccountContext(accountname string) {
-	binary, errLook := exec.LookPath("az")
-	if errLook != nil {
-		panic(errLook)
-	}
-
-	args := []string{"account", "set", "--subscription", accountname}
-
-	_, err := exec.Command(binary, args...).Output()
-	if err != nil {
-		panic(err.Error())
-	}
+type File struct {
+	InstallationID uuid.UUID      `json:"installationId"`
+	Subscriptions  []Subscription `json:"subscriptions"`
 }
 
 func SelectAzureAccountsDisplayName() {
-	d := GetAzureAccounts()
-	var Accounts []Account
-	err := json.Unmarshal(d, &Accounts)
-	if err != nil {
-		panic(err)
+	home, errHome := os.UserHomeDir()
+	if errHome != nil {
+		panic(errHome)
 	}
+	azureProfile := home + "/.azure/azureProfile.json"
+	d := ReadAzureProfile(azureProfile)
+
 	idx, errFind := fuzzyfinder.Find(
-		Accounts,
+		d.Subscriptions,
 		func(i int) string {
-			return Accounts[i].Name
+			return d.Subscriptions[i].Name
 		})
 	if errFind != nil {
 		panic(errFind)
 	}
-	SetAzureAccountContext(Accounts[idx].Name)
-	fmt.Print(Accounts[idx].Name, "\n", Accounts[idx].ID, "\n")
+
+	errWrite := WriteAzureProfile(d, d.Subscriptions[idx].ID, azureProfile)
+	if errWrite != nil {
+		panic(errWrite)
+	}
+	fmt.Print(d.Subscriptions[idx].Name, "\n", d.Subscriptions[idx].ID, "\n")
+}
+
+func ReadAzureProfile(file string) File {
+	jsonFile, err := os.Open(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+	byteValue, errByte := ioutil.ReadAll(jsonFile)
+	if errByte != nil {
+		fmt.Println(errByte)
+	}
+	byteValue = bytes.TrimPrefix(byteValue, []byte("\xef\xbb\xbf"))
+	var jsonData File
+	errJSON := json.Unmarshal(byteValue, &jsonData)
+	if errJSON != nil {
+		fmt.Println(err)
+	}
+
+	return jsonData
+}
+
+func WriteAzureProfile(file File, id uuid.UUID, outFile string) error {
+	for idx := range file.Subscriptions {
+		if file.Subscriptions[idx].ID == id {
+			file.Subscriptions[idx].IsDefault = true
+		} else {
+			file.Subscriptions[idx].IsDefault = false
+		}
+	}
+
+	byteValue, err := json.Marshal(&file)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(outFile, byteValue, 0600)
+	return err
 }
