@@ -105,6 +105,7 @@ func ReadAzureProfile(file string) File {
 		fmt.Println(err)
 	}
 	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue = bytes.TrimPrefix(byteValue, []byte("\xef\xbb\xbf"))
 	var jsonData File
 	errJson := json.Unmarshal(byteValue, &jsonData)
 	if errJson != nil {
