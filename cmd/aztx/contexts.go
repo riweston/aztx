@@ -112,3 +112,18 @@ func ReadAzureProfile(file string) File {
 	return jsonData
 }
 
+func WriteAzureProfile(file File, id uuid.UUID, outFile string) error {
+	for idx, _ := range file.Subscriptions {
+		if file.Subscriptions[idx].ID == id {
+			file.Subscriptions[idx].IsDefault = true
+		}
+	}
+
+	byteValue, err := json.Marshal(&file)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(outFile, byteValue, 0666)
+	return err
+}
