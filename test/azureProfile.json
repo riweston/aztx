@@ -1,0 +1,47 @@
+{
+	"installationId": "e960b7cc-c5d9-11ea-a6f5-00155d82a4f4",
+	"subscriptions": [
+		{
+			"id": "9e7969ef-4cb8-4a2d-959f-bfdaae452a3d",
+			"name": "Test Subscription 1",
+			"state": "Enabled",
+			"user": {
+				"name": "First Last",
+				"type": "user"
+			},
+			"isDefault": false,
+			"tenantId": "9e7969ef-4cb8-4a2d-959f-bfdaae452a3d",
+			"environmentName": "AzureCloud",
+			"homeTenantId": "9e7969ef-4cb8-4a2d-959f-bfdaae452a3d",
+			"managedByTenants": []
+		},
+		{
+			"id": "9bb28eee-ebaa-442a-83ba-5511810fb151",
+			"name": "Test Subscription 2",
+			"state": "Enabled",
+			"user": {
+				"name": "First Last",
+				"type": "user"
+			},
+			"isDefault": false,
+			"tenantId": "9bb28eee-ebaa-442a-83ba-5511810fb151",
+			"environmentName": "AzureCloud",
+			"homeTenantId": "9bb28eee-ebaa-442a-83ba-5511810fb151",
+			"managedByTenants": []
+		},
+		{
+			"id": "8fff24dd-2842-4dbb-8a66-1410c7bc231f",
+			"name": "Test Subscription 3",
+			"state": "Enabled",
+			"user": {
+				"name": "First Last",
+				"type": "user"
+			},
+			"isDefault": false,
+			"tenantId": "8fff24dd-2842-4dbb-8a66-1410c7bc231f",
+			"environmentName": "AzureCloud",
+			"homeTenantId": "8fff24dd-2842-4dbb-8a66-1410c7bc231f",
+			"managedByTenants": []
+		}
+	]
+}
