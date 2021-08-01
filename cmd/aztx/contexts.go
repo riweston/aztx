@@ -76,6 +76,8 @@ func SetAzureAccountContext(accountname string) {
 	if err != nil {
 		panic(err.Error())
 	}
+	InstallationID uuid.UUID      `json:"installationId"`
+	Subscriptions  []Subscription `json:"subscriptions"`
 }
 
 func SelectAzureAccountsDisplayName() {
