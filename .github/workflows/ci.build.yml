@@ -5,30 +5,20 @@ on:
   pull_request:
 
 jobs:
-  go-versions:
-    name: Lookup go versions
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.versions.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: arnested/go-version-action@v1
-        id: versions
-
   goreleaser:
     name: "CI: Build Test Release"
     runs-on: ubuntu-latest
-    needs: go-versions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+      - uses: arnested/go-version-action@v1
+        id: go-version
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: ${{ needs.go-versions.outputs.latest }}
-          check-latest: true
+          go-version: ${{ steps.go-version.outputs.latest }}
       - name: Build a test release
         run: |
           go build .
