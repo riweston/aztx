@@ -21,7 +21,7 @@ jobs:
     needs: go-versions
     strategy:
       matrix:
-        version: ${{ fromJSON(needs.go-versions.outputs.matrix) }}
+        version: ${{ fromJSON(needs.go-versions.outputs.latest) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
