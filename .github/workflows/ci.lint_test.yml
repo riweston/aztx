@@ -34,6 +34,10 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - uses: arnested/go-version-action@v1
         id: go-version
       - name: Install Go
