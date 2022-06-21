@@ -27,6 +27,14 @@ import (
 	"github.com/ktr0731/go-fuzzyfinder"
 )
 
+const (
+	InfoColor    = "\033[0;32m%s\033[0m"
+	NoticeColor  = "\033[0;36m%s\033[0m"
+	WarningColor = "\033[1;33m%s\033[0m"
+	ErrorColor   = "\033[1;31m%s\033[0m"
+	DebugColor   = "\033[0;36m%s\033[0m"
+)
+
 type Subscription struct {
 	EnvironmentName  string    `json:"environmentName"`
 	HomeTenantID     uuid.UUID `json:"homeTenantId"`
@@ -54,21 +62,27 @@ func SelectAzureAccountsDisplayName() {
 	}
 	azureProfile := home + "/.azure/azureProfile.json"
 	d := ReadAzureProfile(azureProfile)
+	currentCtx := ReadAzureProfileDefault(d)
 
-	idx, errFind := fuzzyfinder.Find(
+	idx, err := fuzzyfinder.Find(
 		d.Subscriptions,
 		func(i int) string {
 			return d.Subscriptions[i].Name
-		})
-	if errFind != nil {
-		panic(errFind)
+		},
+		fuzzyfinder.WithHeader(currentCtx))
+	if err != nil {
+		fmt.Printf(NoticeColor, "cancelled\n")
+		msg := fmt.Sprintf("%s\n", currentCtx)
+		fmt.Printf(InfoColor, msg)
+		return
 	}
 
 	errWrite := WriteAzureProfile(d, d.Subscriptions[idx].ID, azureProfile)
 	if errWrite != nil {
 		panic(errWrite)
 	}
-	fmt.Print(d.Subscriptions[idx].Name, "\n", d.Subscriptions[idx].ID, "\n")
+	msg := fmt.Sprintf("Set Context: %s (%s)\n", d.Subscriptions[idx].Name, d.Subscriptions[idx].ID)
+	fmt.Printf(InfoColor, msg)
 }
 
 func ReadAzureProfile(file string) File {
@@ -88,6 +102,19 @@ func ReadAzureProfile(file string) File {
 	}
 
 	return jsonData
+}
+
+func ReadAzureProfileDefault(file File) (subscription string) {
+	var subscriptionName string
+	var subscriptionID uuid.UUID
+
+	for idx := range file.Subscriptions {
+		if file.Subscriptions[idx].IsDefault {
+			subscriptionName = file.Subscriptions[idx].Name
+			subscriptionID = file.Subscriptions[idx].ID
+		}
+	}
+	return fmt.Sprintf("Current Context: %s (%s)", subscriptionName, subscriptionID)
 }
 
 func WriteAzureProfile(file File, id uuid.UUID, outFile string) error {
