@@ -27,6 +27,14 @@ import (
 	"github.com/ktr0731/go-fuzzyfinder"
 )
 
+const (
+	InfoColor    = "\033[0;32m%s\033[0m"
+	NoticeColor  = "\033[0;36m%s\033[0m"
+	WarningColor = "\033[1;33m%s\033[0m"
+	ErrorColor   = "\033[1;31m%s\033[0m"
+	DebugColor   = "\033[0;36m%s\033[0m"
+)
+
 type Subscription struct {
 	EnvironmentName  string    `json:"environmentName"`
 	HomeTenantID     uuid.UUID `json:"homeTenantId"`
