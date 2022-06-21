@@ -76,7 +76,8 @@ func SelectAzureAccountsDisplayName() {
 	if errWrite != nil {
 		panic(errWrite)
 	}
-	fmt.Print(d.Subscriptions[idx].Name, "\n", d.Subscriptions[idx].ID, "\n")
+	msg := fmt.Sprintf("Set Context: %s (%s)\n", d.Subscriptions[idx].Name, d.Subscriptions[idx].ID)
+	fmt.Printf(InfoColor, msg)
 }
 
 func ReadAzureProfile(file string) File {
