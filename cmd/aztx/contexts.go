@@ -62,6 +62,7 @@ func SelectAzureAccountsDisplayName() {
 	}
 	azureProfile := home + "/.azure/azureProfile.json"
 	d := ReadAzureProfile(azureProfile)
+	currentCtx := ReadAzureProfileDefault(d)
 
 	idx, errFind := fuzzyfinder.Find(
 		d.Subscriptions,
@@ -70,6 +71,7 @@ func SelectAzureAccountsDisplayName() {
 		})
 	if errFind != nil {
 		panic(errFind)
+		fuzzyfinder.WithHeader(currentCtx))
 	}
 
 	errWrite := WriteAzureProfile(d, d.Subscriptions[idx].ID, azureProfile)
