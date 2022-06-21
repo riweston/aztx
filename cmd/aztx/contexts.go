@@ -106,15 +106,15 @@ func ReadAzureProfile(file string) File {
 
 func ReadAzureProfileDefault(file File) (subscription string) {
 	var subscriptionName string
-	var subscriptionId uuid.UUID
+	var subscriptionID uuid.UUID
 
 	for idx := range file.Subscriptions {
 		if file.Subscriptions[idx].IsDefault {
 			subscriptionName = file.Subscriptions[idx].Name
-			subscriptionId = file.Subscriptions[idx].ID
+			subscriptionID = file.Subscriptions[idx].ID
 		}
 	}
-	return fmt.Sprintf("Current Context: %s (%s)", subscriptionName, subscriptionId)
+	return fmt.Sprintf("Current Context: %s (%s)", subscriptionName, subscriptionID)
 }
 
 func WriteAzureProfile(file File, id uuid.UUID, outFile string) error {
