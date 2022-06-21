@@ -98,6 +98,19 @@ func ReadAzureProfile(file string) File {
 	return jsonData
 }
 
+func ReadAzureProfileDefault(file File) (subscription string) {
+	var subscriptionName string
+	var subscriptionId uuid.UUID
+
+	for idx := range file.Subscriptions {
+		if file.Subscriptions[idx].IsDefault {
+			subscriptionName = file.Subscriptions[idx].Name
+			subscriptionId = file.Subscriptions[idx].ID
+		}
+	}
+	return fmt.Sprintf("Current Context: %s (%s)", subscriptionName, subscriptionId)
+}
+
 func WriteAzureProfile(file File, id uuid.UUID, outFile string) error {
 	for idx := range file.Subscriptions {
 		if file.Subscriptions[idx].ID == id {
