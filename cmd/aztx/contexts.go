@@ -64,14 +64,17 @@ func SelectAzureAccountsDisplayName() {
 	d := ReadAzureProfile(azureProfile)
 	currentCtx := ReadAzureProfileDefault(d)
 
-	idx, errFind := fuzzyfinder.Find(
+	idx, err := fuzzyfinder.Find(
 		d.Subscriptions,
 		func(i int) string {
 			return d.Subscriptions[i].Name
-		})
-	if errFind != nil {
-		panic(errFind)
+		},
 		fuzzyfinder.WithHeader(currentCtx))
+	if err != nil {
+		fmt.Printf(NoticeColor, "cancelled\n")
+		msg := fmt.Sprintf("%s\n", currentCtx)
+		fmt.Printf(InfoColor, msg)
+		return
 	}
 
 	errWrite := WriteAzureProfile(d, d.Subscriptions[idx].ID, azureProfile)
