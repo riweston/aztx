@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-
 	"github.com/google/uuid"
 	"github.com/ktr0731/go-fuzzyfinder"
 )
