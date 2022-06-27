@@ -19,3 +19,15 @@ builds:
       - darwin
       - linux
       - windows
+scoop:
+  bucket:
+    owner: riweston
+    name: scoop-bucket
+    token: "{{ .Env.HOMEBREW }}"
+  url_template: "https://github.com/riweston/scoop-bucket/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+  commit_author:
+    name: goreleaserbot
+    email: goreleaser@riweston.io
+  homepage: "https://github.com/riweston/aztx"
+  description: "This tool is a helper for azure-cli that leverages fzf for a nice interface to switch between subscription contexts."
+  license: "Apache"
