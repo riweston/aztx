@@ -24,7 +24,7 @@ scoop:
     owner: riweston
     name: scoop-bucket
     token: "{{ .Env.HOMEBREW }}"
-  url_template: "https://github.com/riweston/scoop-bucket/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+  url_template: "https://github.com/riweston/aztx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
   commit_author:
     name: goreleaserbot
     email: goreleaser@riweston.io
