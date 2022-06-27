@@ -14,3 +14,8 @@ brews:
     dependencies:
       - name: azure-cli
       - name: fzf
+builds:
+  - goos:
+      - darwin
+      - linux
+      - windows
