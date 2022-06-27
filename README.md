@@ -29,17 +29,28 @@
 
 ## Install
 
-### Source
-
-```sh
-go install github.com/riweston/aztx
-```
-
-### brew
+### Brew (Linux/Mac)
 
 ```sh
 brew tap riweston/aztx
 brew install aztx
+```
+
+### Scoop (Windows)
+
+```sh
+brew tap riweston/aztx
+brew install aztx
+```
+
+### Manual
+
+Grab a release from the repo and install it.
+
+### Build from source
+
+```sh
+go install github.com/riweston/aztx
 ```
 
 ## Usage
