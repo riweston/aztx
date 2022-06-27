@@ -39,8 +39,9 @@ brew install aztx
 ### Scoop (Windows)
 
 ```sh
-brew tap riweston/aztx
-brew install aztx
+scoop bucket add riweston https://github.com/riweston/scoop-bucket.git
+scoop update
+scoop install riweston/aztx
 ```
 
 ### Manual
