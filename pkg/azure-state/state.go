@@ -41,5 +41,7 @@ func (v *ViperAdapter) Read(key string) string {
 
 func (v *ViperAdapter) Write(key, value string) {
 	v.Viper.Set(key, value)
-	v.Viper.WriteConfig()
+	if err := v.Viper.WriteConfig(); err != nil {
+		panic(err)
+	}
 }

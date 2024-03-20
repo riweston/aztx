@@ -33,7 +33,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "aztx",
@@ -53,7 +52,7 @@ to quickly create a Cobra application.`,
 		userProfileAdapter := azurecli.UserProfileFileAdapter{}
 		c := azurecli.NewConfigurationAdapter(&userProfileAdapter)
 
-		if args != nil && len(args) > 0 {
+		if len(args) > 0 {
 			if args[0] == "-" {
 				if err := c.SetPreviousContext(lc); err != nil {
 					fmt.Println(err)
@@ -72,7 +71,10 @@ to quickly create a Cobra application.`,
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		c.SetContext(lc, ac)
+		if err := c.SetContext(lc, ac); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 
@@ -92,7 +94,6 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
@@ -100,21 +101,20 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
 
-		// Search config in home directory with name ".aztx" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yml")
-		viper.SetConfigName(".aztx")
-		viper.SafeWriteConfigAs(home + "/.aztx.yml")
+	// Find home directory.
+	home, err := os.UserHomeDir()
+	cobra.CheckErr(err)
 
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
+	// Search config in home directory with name ".aztx" (without extension).
+	viper.AddConfigPath(home)
+	viper.SetConfigType("yml")
+	viper.SetConfigName(".aztx")
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println("Can't read config:", err)
-		os.Exit(1)
+		// If the config file doesn't exist, create it.
+		if err := viper.SafeWriteConfigAs(home + "/.aztx.yml"); err != nil {
+			fmt.Println("Can't write config:", err)
+			os.Exit(1)
+		}
 	}
 }
