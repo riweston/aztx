@@ -10,19 +10,17 @@ jobs:
   goreleaser:
     name: "CD: Release"
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ssh-key: "${{ secrets.DEPLOY_KEY }}"
-      - uses: arnested/go-version-action@v1
-        id: go-version
-      - name: Set up Go
-        uses: actions/setup-go@v3
+      - name: Install Go
+        uses: actions/setup-go@v5
         with:
-          go-version: ${{ steps.go-version.outputs.latest }}
-          check-latest: true
+          go-version: stable
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:

@@ -10,13 +10,15 @@ jobs:
   versionbumper:
     name: "CD: Tagging"
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Bump version and push tag
         uses: anothrNick/github-tag-action@1.35.0
         env:
-          GITHUB_TOKEN: ${{ secrets.HOMEBREW }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WITH_V: false
