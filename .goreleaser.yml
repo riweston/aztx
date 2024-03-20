@@ -1,33 +1,54 @@
-brews:
-  - tap:
-      owner: riweston
-      name: homebrew-aztx
-      # Optionally a token can be provided, if it differs from the token provided to GoReleaser
-      token: "{{ .Env.HOMEBREW }}"
-    url_template: "https://github.com/riweston/aztx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    commit_author:
-      name: goreleaserbot
-      email: goreleaser@riweston.io
-    homepage: "https://github.com/riweston/aztx"
-    description: "This tool is a helper for azure-cli that leverages fzf for a nice interface to switch between subscription contexts."
-    license: "Apache"
-    dependencies:
-      - name: azure-cli
-      - name: fzf
 builds:
   - goos:
       - darwin
       - linux
       - windows
-scoop:
-  bucket:
-    owner: riweston
-    name: scoop-bucket
-    token: "{{ .Env.HOMEBREW }}"
-  url_template: "https://github.com/riweston/aztx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-  commit_author:
-    name: goreleaserbot
-    email: goreleaser@riweston.io
-  homepage: "https://github.com/riweston/aztx"
-  description: "This tool is a helper for azure-cli that leverages fzf for a nice interface to switch between subscription contexts."
-  license: "Apache"
+archives:
+  - format: zip
+brews:
+  - name: aztx
+    url_template: "https://github.com/riweston/aztx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    repository:
+      owner: riweston
+      name: homebrew-aztx
+      token: "{{ .Env.HOMEBREW }}"
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@riweston.io
+    homepage: "https://github.com/riweston/aztx"
+    description: "This tool is a helper for azure-cli that leverages fzf for a nice interface to switch between subscription contexts."
+    license: "MIT"
+    dependencies:
+      - name: azure-cli
+      - name: fzf
+scoops:
+  - name: aztx
+    url_template: "https://github.com/riweston/aztx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    repository:
+      owner: riweston
+      name: scoop-bucket
+      token: "{{ .Env.HOMEBREW }}"
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@riweston.io
+    homepage: "https://github.com/riweston/aztx"
+    description: "This tool is a helper for azure-cli that leverages fzf for a nice interface to switch between subscription contexts."
+    license: "MIT"
+    depends:
+      - azure-cli
+      - fzf
+winget:
+  - name: aztx
+    url_template: "https://github.com/riweston/aztx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    package_identifier: "riweston.aztx"
+    repository:
+      owner: riweston
+      name: winget-aztx
+      token: "{{ .Env.HOMEBREW }}"
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@riweston.io
+    homepage: "https://github.com/riweston/aztx"
+    short_description: "This tool is a helper for azure-cli that leverages fzf for a nice interface to switch between subscription contexts."
+    license: "MIT"
+    publisher: "Richard Weston"
