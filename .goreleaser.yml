@@ -43,11 +43,19 @@ winget:
     package_identifier: "riweston.aztx"
     repository:
       owner: riweston
-      name: winget-aztx
+      name: winget-pkgs
       token: "{{ .Env.HOMEBREW }}"
+      branch: "aztx-{{ .Tag }}"
+      pull_request:
+        enabled: true
+        draft: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
     commit_author:
-      name: goreleaserbot
-      email: goreleaser@riweston.io
+      name: Richard Weston
+      email: github@riweston.io
     homepage: "https://github.com/riweston/aztx"
     short_description: "This tool is a helper for azure-cli that leverages fzf for a nice interface to switch between subscription contexts."
     license: "MIT"
