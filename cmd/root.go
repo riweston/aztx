@@ -25,8 +25,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ktr0731/go-fuzzyfinder"
-	azurecli "github.com/riweston/aztx/pkg/azure-cli"
-	azurestate "github.com/riweston/aztx/pkg/azure-state"
+	"github.com/riweston/aztx/pkg/profile"
+	 "github.com/riweston/aztx/pkg/state"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -47,10 +47,10 @@ to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg := azurestate.ViperAdapter{Viper: viper.GetViper()}
-		lc := azurestate.NewStateReaderWriter(&cfg)
-		userProfileAdapter := azurecli.UserProfileFileAdapter{}
-		c := azurecli.NewConfigurationAdapter(&userProfileAdapter)
+		cfg := state.ViperAdapter{Viper: viper.GetViper()}
+		lc := state.NewStateReaderWriter(&cfg)
+		userProfileAdapter := profile.UserProfileFileAdapter{}
+		c := profile.NewConfigurationAdapter(&userProfileAdapter)
 
 		if len(args) > 0 {
 			if args[0] == "-" {

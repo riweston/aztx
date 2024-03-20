@@ -1,4 +1,4 @@
-package azure_state
+package state
 
 import "github.com/spf13/viper"
 

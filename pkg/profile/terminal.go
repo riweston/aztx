@@ -1,4 +1,4 @@
-package azure_cli
+package profile
 
 import "fmt"
 

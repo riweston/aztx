@@ -1,11 +1,11 @@
-package azure_cli
+package profile
 
 import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/ktr0731/go-fuzzyfinder"
-	azurestate "github.com/riweston/aztx/pkg/azure-state"
+	azurestate "github.com/riweston/aztx/pkg/state"
 )
 
 type ConfigurationAdapter struct {
