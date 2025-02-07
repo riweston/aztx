@@ -24,10 +24,11 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/ktr0731/go-fuzzyfinder"
 	"github.com/riweston/aztx/pkg/profile"
-	 "github.com/riweston/aztx/pkg/state"
-	"os"
+	"github.com/riweston/aztx/pkg/state"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
