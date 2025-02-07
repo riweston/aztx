@@ -4,7 +4,14 @@ import "github.com/google/uuid"
 
 type Configuration struct {
 	InstallationID uuid.UUID      `json:"installationId"`
+	Tenants        []Tenant       `json:"tenants,omitempty"`
 	Subscriptions  []Subscription `json:"subscriptions"`
+}
+
+type Tenant struct {
+	ID         uuid.UUID `json:"tenantId"`
+	Name       string    `json:"name"`
+	CustomName string    `json:"customName,omitempty"`
 }
 
 type Subscription struct {
