@@ -29,6 +29,7 @@ import (
 	"github.com/ktr0731/go-fuzzyfinder"
 	"github.com/riweston/aztx/pkg/profile"
 	"github.com/riweston/aztx/pkg/state"
+	"github.com/riweston/aztx/pkg/storage"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -37,34 +38,39 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "aztx",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Azure Tenant Context Switcher",
+	Long: `aztx is a command line tool that helps you switch between Azure tenants and subscriptions.
+It provides a fuzzy finder interface to select subscriptions and remembers your last context.`,
 	Args: cobra.MaximumNArgs(1),
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := state.ViperAdapter{Viper: viper.GetViper()}
 		lc := state.NewStateReaderWriter(&cfg)
-		userProfileAdapter := profile.UserProfileFileAdapter{}
-		c := profile.NewConfigurationAdapter(&userProfileAdapter)
 
-		if len(args) > 0 {
-			if args[0] == "-" {
-				if err := c.SetPreviousContext(lc); err != nil {
-					fmt.Println(err)
-					os.Exit(1)
-				} else {
-					os.Exit(0)
-				}
-			}
-
+		reader := storage.FileAdapter{}
+		if err := reader.FetchDefaultPath("/.azure/azureProfile.json"); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
 		}
-		ac, err := c.SelectWithFinder()
+
+		writer := storage.FileAdapter{}
+		if err := writer.FetchDefaultPath("/.azure/azureProfile.json"); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		c := profile.NewConfigurationAdapter(reader, writer)
+
+		if len(args) > 0 && args[0] == "-" {
+			if err := c.SetPreviousContext(lc); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			os.Exit(0)
+		}
+
+		sub, err := c.SelectWithFinder()
 		if errors.Is(err, fuzzyfinder.ErrAbort) {
 			os.Exit(0)
 		}
@@ -72,7 +78,8 @@ to quickly create a Cobra application.`,
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		if err := c.SetContext(lc, ac); err != nil {
+
+		if err := c.SetContext(sub.ID); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
@@ -90,31 +97,37 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-
-	// Find home directory.
 	home, err := os.UserHomeDir()
-	cobra.CheckErr(err)
+	if err != nil {
+		fmt.Println("Error getting home directory:", err)
+		os.Exit(1)
+	}
 
 	// Search config in home directory with name ".aztx" (without extension).
 	viper.AddConfigPath(home)
 	viper.SetConfigType("yml")
 	viper.SetConfigName(".aztx")
+}
+
+// initConfig reads in config file and ENV variables if set.
+func initConfig() {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Println("Error getting home directory:", err)
+		os.Exit(1)
+	}
+
+	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err != nil {
-		// If the config file doesn't exist, create it.
-		if err := viper.SafeWriteConfigAs(home + "/.aztx.yml"); err != nil {
-			fmt.Println("Can't write config:", err)
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file not found; creating default
+			if err := viper.SafeWriteConfigAs(home + "/.aztx.yml"); err != nil {
+				fmt.Println("Can't write config:", err)
+				os.Exit(1)
+			}
+		} else {
+			// Config file was found but another error was produced
+			fmt.Println("Error reading config:", err)
 			os.Exit(1)
 		}
 	}

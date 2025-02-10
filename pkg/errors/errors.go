@@ -1,17 +1,16 @@
-package profile
+package errors
 
 import (
 	"errors"
 	"fmt"
 )
 
-// The errors file contains the error types used by the azure_cli package.
-
 var (
 	// ErrFileDoesNotExist is returned when the file does not exist.
-	ErrFileDoesNotExist = func(err error) error {
-		return fmt.Errorf("file does not exist: %w", err)
-	}
+	ErrFileDoesNotExist = errors.New("file does not exist")
+
+	// ErrFetchingHomePath is returned when there is an error getting the home directory.
+	ErrFetchingHomePath = errors.New("could not fetch home directory")
 
 	// ErrGettingHomeDirectory is returned when there is an error getting the home directory.
 	ErrGettingHomeDirectory = func(err error) error {
@@ -39,7 +38,7 @@ var (
 	}
 
 	// ErrPathIsEmpty is returned when the sampleConfigFilePath is empty.
-	ErrPathIsEmpty = errors.New("sampleConfigFilePath is empty")
+	ErrPathIsEmpty = errors.New("path is empty")
 
 	// ErrReadingConfiguration is returned when there is an error reading the configuration.
 	ErrReadingConfiguration = func(err error) error {

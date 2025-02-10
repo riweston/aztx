@@ -1,74 +1,114 @@
 package profile
 
 import (
-	"errors"
 	"fmt"
+
 	"github.com/google/uuid"
-	"github.com/ktr0731/go-fuzzyfinder"
-	azurestate "github.com/riweston/aztx/pkg/state"
+	"github.com/riweston/aztx/pkg/errors"
+	"github.com/riweston/aztx/pkg/state"
+	"github.com/riweston/aztx/pkg/storage"
+	"github.com/riweston/aztx/pkg/subscription"
+	"github.com/riweston/aztx/pkg/tenant"
+	"github.com/riweston/aztx/pkg/types"
+	"github.com/spf13/viper"
 )
 
 type ConfigurationAdapter struct {
-	userProfile userProfileReadWriter
+	reader              storage.FileAdapter
+	writer              storage.FileAdapter
+	tenantService       tenant.TenantManager
+	subscriptionService subscription.SubscriptionManager
 }
 
-func NewConfigurationAdapter(userProfile userProfileReadWriter) *ConfigurationAdapter {
+func NewConfigurationAdapter(
+	reader storage.FileAdapter,
+	writer storage.FileAdapter,
+) *ConfigurationAdapter {
 	return &ConfigurationAdapter{
-		userProfile: userProfile,
+		reader: reader,
+		writer: writer,
 	}
 }
 
-func (c *ConfigurationAdapter) SelectWithFinder() (*Subscription, error) {
-	cfg, err := c.userProfile.Read()
+func (c *ConfigurationAdapter) SelectWithFinder() (*types.Subscription, error) {
+	config, err := c.reader.ReadConfig()
 	if err != nil {
-		return nil, ErrReadingConfiguration(err)
+		return nil, errors.ErrReadingConfiguration(err)
 	}
-	idx, err := c.userProfile.Find(cfg)
-	if errors.Is(err, fuzzyfinder.ErrAbort) {
-		PrintNotice("Operation aborted")
+
+	subManager := subscription.SubscriptionManager{Configuration: config}
+	idx, err := subManager.FindSubscriptionIndex()
+	if err != nil {
 		return nil, err
 	}
-	if err != nil {
-		return nil, ErrSelectingSubscription(err)
-	}
-	return &cfg.Subscriptions[idx], nil
+
+	return &config.Subscriptions[idx], nil
 }
 
-func (c *ConfigurationAdapter) SetPreviousContext(lastContext *azurestate.LastContext) error {
-	lastContextId := lastContext.ReadLastContextId()
-	lastContextDisplayName := lastContext.ReadLastContextDisplayName()
-	if lastContextId == "" || lastContextDisplayName == "" {
-		return ErrNoPreviousContext
-	}
-	if err := c.SetContext(lastContext, &Subscription{ID: uuid.MustParse(lastContextId), Name: lastContextDisplayName}); err != nil {
-		return ErrSettingPreviousContext(err)
-	}
-	return nil
-}
-
-func (c *ConfigurationAdapter) SetContext(lastContext *azurestate.LastContext, selectedContext *Subscription) error {
-	cfg, err := c.userProfile.Read()
-	var errNotFound bool
+func (c *ConfigurationAdapter) SetContext(subscriptionID uuid.UUID) error {
+	config, err := c.reader.ReadConfig()
 	if err != nil {
-		return ErrReadingConfiguration(err)
+		return errors.ErrReadingConfiguration(err)
 	}
-	for i, sub := range cfg.Subscriptions {
+
+	// Save current context before switching
+	lc := state.NewStateReaderWriter(&state.ViperAdapter{Viper: viper.GetViper()})
+	for _, sub := range config.Subscriptions {
 		if sub.IsDefault {
-			lastContext.WriteLastContext(sub.ID.String(), sub.Name)
-		}
-		cfg.Subscriptions[i].IsDefault = false
-		if sub.ID == selectedContext.ID {
-			errNotFound = false
-			cfg.Subscriptions[i].IsDefault = true
+			lc.WriteLastContext(sub.ID.String(), sub.Name)
+			break
 		}
 	}
-	if errNotFound {
-		return ErrSubscriptionNotFound
+
+	subManager := subscription.SubscriptionManager{Configuration: config}
+	if err := subManager.SetDefaultSubscription(subscriptionID); err != nil {
+		return err
 	}
-	err = c.userProfile.Write(cfg)
+
+	return c.writer.WriteConfig(config)
+}
+
+func (c *ConfigurationAdapter) SetPreviousContext(lastContext *state.LastContext) error {
+	lastContextId := lastContext.ReadLastContextId()
+	lastContextName := lastContext.ReadLastContextDisplayName()
+
+	if lastContextId == "" || lastContextName == "" {
+		return errors.ErrNoPreviousContext
+	}
+
+	// Get current context before switching
+	config, err := c.reader.ReadConfig()
 	if err != nil {
-		return ErrWritingConfiguration(err)
+		return errors.ErrReadingConfiguration(err)
 	}
-	PrintInfo(fmt.Sprintf("Switched to \"%s\" (%s)", selectedContext.Name, selectedContext.ID))
-	return nil
+
+	// Find current default subscription
+	for _, sub := range config.Subscriptions {
+		if sub.IsDefault {
+			// Save current as last before switching
+			lastContext.WriteLastContext(sub.ID.String(), sub.Name)
+			break
+		}
+	}
+
+	id, err := uuid.Parse(lastContextId)
+	if err != nil {
+		return fmt.Errorf("invalid last context ID: %w", err)
+	}
+
+	return c.SetContext(id)
+}
+
+func (c *ConfigurationAdapter) SaveTenant(id uuid.UUID, name string) error {
+	config, err := c.reader.ReadConfig()
+	if err != nil {
+		return errors.ErrReadingConfiguration(err)
+	}
+
+	tenantManager := tenant.TenantManager{Configuration: config}
+	if err := tenantManager.SaveTenantName(id, name); err != nil {
+		return err
+	}
+
+	return c.writer.WriteConfig(config)
 }
