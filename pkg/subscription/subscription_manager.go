@@ -11,12 +11,12 @@ import (
 
 var ErrSubscriptionNotFound = errors.New("subscription not found")
 
-type SubscriptionManager struct {
+type Manager struct {
 	Configuration *types.Configuration
 }
 
 // SetDefaultSubscription marks a subscription as default by its UUID.
-func (sm *SubscriptionManager) SetDefaultSubscription(subscriptionID uuid.UUID) error {
+func (sm *Manager) SetDefaultSubscription(subscriptionID uuid.UUID) error {
 	for i, sub := range sm.Configuration.Subscriptions {
 		if sub.ID == subscriptionID {
 			sm.Configuration.Subscriptions[i].IsDefault = true
@@ -28,7 +28,7 @@ func (sm *SubscriptionManager) SetDefaultSubscription(subscriptionID uuid.UUID) 
 }
 
 // FindSubscription searches for a subscription by name and returns its index.
-func (sm *SubscriptionManager) FindSubscription(name string) (*types.Subscription, error) {
+func (sm *Manager) FindSubscription(name string) (*types.Subscription, error) {
 	for _, sub := range sm.Configuration.Subscriptions {
 		if sub.Name == name {
 			return &sub, nil
@@ -38,7 +38,7 @@ func (sm *SubscriptionManager) FindSubscription(name string) (*types.Subscriptio
 }
 
 // FindSubscriptionIndex uses fuzzy finding to let user select a subscription
-func (sm *SubscriptionManager) FindSubscriptionIndex() (int, error) {
+func (sm *Manager) FindSubscriptionIndex() (int, error) {
 	items := make([]string, len(sm.Configuration.Subscriptions))
 	for i, sub := range sm.Configuration.Subscriptions {
 		items[i] = fmt.Sprintf("%s (%s)", sub.Name, sub.ID)
@@ -58,7 +58,7 @@ func (sm *SubscriptionManager) FindSubscriptionIndex() (int, error) {
 }
 
 // FindSubscriptionByID finds a subscription by its ID
-func (sm *SubscriptionManager) FindSubscriptionByID(id uuid.UUID) (*types.Subscription, error) {
+func (sm *Manager) FindSubscriptionByID(id uuid.UUID) (*types.Subscription, error) {
 	for _, sub := range sm.Configuration.Subscriptions {
 		if sub.ID == id {
 			return &sub, nil

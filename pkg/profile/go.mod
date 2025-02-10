@@ -5,12 +5,11 @@ go 1.21
 require (
 	github.com/google/uuid v1.6.0
 	github.com/riweston/aztx/pkg/errors v0.0.0
-	github.com/riweston/aztx/pkg/state v0.0.0
+	github.com/riweston/aztx/pkg/state v0.0.0-00010101000000-000000000000
 	github.com/riweston/aztx/pkg/storage v0.0.0
 	github.com/riweston/aztx/pkg/subscription v0.0.0
 	github.com/riweston/aztx/pkg/tenant v0.0.0
 	github.com/riweston/aztx/pkg/types v0.0.0
-	github.com/spf13/viper v1.19.0
 )
 
 replace (
@@ -43,6 +42,7 @@ require (
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/viper v1.19.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect

@@ -47,15 +47,23 @@ func (fa *FileAdapter) Read() ([]byte, error) {
 	return io.ReadAll(file)
 }
 
+// ReadConfig reads and unmarshals configuration from file
 func (fa *FileAdapter) ReadConfig() (*types.Configuration, error) {
-	data, err := fa.Read()
+	if fa.Path == "" {
+		return nil, errors.ErrPathIsEmpty
+	}
+
+	data, err := os.ReadFile(fa.Path)
 	if err != nil {
-		return nil, err
+		if os.IsNotExist(err) {
+			return nil, errors.ErrFileDoesNotExist
+		}
+		return nil, errors.ErrFileOperation("reading", err)
 	}
 
 	var config types.Configuration
 	if err := json.Unmarshal(data, &config); err != nil {
-		return nil, err
+		return nil, errors.ErrFileOperation("unmarshaling", err)
 	}
 	return &config, nil
 }
@@ -68,10 +76,16 @@ func (fa *FileAdapter) Write(data []byte) error {
 	return os.WriteFile(fa.Path, data, 0644)
 }
 
+// WriteConfig marshals and writes configuration to file
 func (fa *FileAdapter) WriteConfig(config *types.Configuration) error {
+	if fa.Path == "" {
+		return errors.ErrPathIsEmpty
+	}
+
 	data, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
-		return err
+		return errors.ErrFileOperation("marshaling", err)
 	}
-	return fa.Write(data)
+
+	return os.WriteFile(fa.Path, data, 0644)
 }

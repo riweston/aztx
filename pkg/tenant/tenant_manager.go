@@ -5,12 +5,12 @@ import (
 	"github.com/riweston/aztx/pkg/types"
 )
 
-type TenantManager struct {
+type Manager struct {
 	Configuration *types.Configuration
 }
 
 // GetTenants retrieves a list of unique tenants from subscriptions.
-func (tm *TenantManager) GetTenants() ([]types.Tenant, error) {
+func (tm *Manager) GetTenants() ([]types.Tenant, error) {
 	uniqueTenants := make(map[string]types.Tenant)
 
 	for _, sub := range tm.Configuration.Subscriptions {
@@ -30,7 +30,7 @@ func (tm *TenantManager) GetTenants() ([]types.Tenant, error) {
 }
 
 // SaveTenantName saves or updates a tenant's custom name.
-func (tm *TenantManager) SaveTenantName(id uuid.UUID, customName string) error {
+func (tm *Manager) SaveTenantName(id uuid.UUID, customName string) error {
 	found := false
 	for i, tenant := range tm.Configuration.Tenants {
 		if tenant.ID == id {

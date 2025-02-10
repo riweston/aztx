@@ -42,71 +42,51 @@ var rootCmd = &cobra.Command{
 	Long: `aztx is a command line tool that helps you switch between Azure tenants and subscriptions.
 It provides a fuzzy finder interface to select subscriptions and remembers your last context.`,
 	Args: cobra.MaximumNArgs(1),
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	Run: func(cmd *cobra.Command, args []string) {
-		cfg := state.ViperAdapter{Viper: viper.GetViper()}
-		lc := state.NewStateReaderWriter(&cfg)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		stateManager := state.NewViperStateManager(viper.GetViper())
 
-		reader := storage.FileAdapter{}
-		if err := reader.FetchDefaultPath("/.azure/azureProfile.json"); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+		storage := storage.FileAdapter{}
+		if err := storage.FetchDefaultPath("/.azure/azureProfile.json"); err != nil {
+			return fmt.Errorf("failed to get profile path: %w", err)
 		}
 
-		writer := storage.FileAdapter{}
-		if err := writer.FetchDefaultPath("/.azure/azureProfile.json"); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		logger := profile.NewLogger(viper.GetString("log-level"))
 
-		c := profile.NewConfigurationAdapter(reader, writer)
+		cfg := profile.NewConfigurationAdapter(&storage, logger)
 
 		if len(args) > 0 && args[0] == "-" {
-			if err := c.SetPreviousContext(lc); err != nil {
-				fmt.Println(err)
-				os.Exit(1)
+			if err := cfg.SetPreviousContext(stateManager); err != nil {
+				return fmt.Errorf("failed to set previous context: %w", err)
 			}
-			os.Exit(0)
+			return nil
 		}
 
-		sub, err := c.SelectWithFinder()
-		if errors.Is(err, fuzzyfinder.ErrAbort) {
-			os.Exit(0)
-		}
+		sub, err := cfg.SelectWithFinder()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			if errors.Is(err, fuzzyfinder.ErrAbort) {
+				return nil
+			}
+			return fmt.Errorf("failed to select subscription: %w", err)
 		}
 
-		if err := c.SetContext(sub.ID); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+		if err := cfg.SetContext(sub.ID); err != nil {
+			return fmt.Errorf("failed to set context: %w", err)
 		}
+
+		return nil
 	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
+func Execute() error {
+	return rootCmd.Execute()
 }
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	home, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Println("Error getting home directory:", err)
-		os.Exit(1)
-	}
-
-	// Search config in home directory with name ".aztx" (without extension).
-	viper.AddConfigPath(home)
-	viper.SetConfigType("yml")
-	viper.SetConfigName(".aztx")
+	rootCmd.PersistentFlags().String("log-level", "info", "Set log level (debug, info, warn, error)")
+	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -117,16 +97,18 @@ func initConfig() {
 		os.Exit(1)
 	}
 
-	// If a config file is found, read it in.
+	viper.AddConfigPath(home)
+	viper.SetConfigType("yml")
+	viper.SetConfigName(".aztx")
+
+	// Create config if it doesn't exist
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// Config file not found; creating default
 			if err := viper.SafeWriteConfigAs(home + "/.aztx.yml"); err != nil {
 				fmt.Println("Can't write config:", err)
 				os.Exit(1)
 			}
 		} else {
-			// Config file was found but another error was produced
 			fmt.Println("Error reading config:", err)
 			os.Exit(1)
 		}
