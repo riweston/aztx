@@ -77,25 +77,30 @@ func (c *ConfigurationAdapter) SetContext(subscriptionID uuid.UUID) error {
 		return pkgerrors.WrapError("reading configuration", err)
 	}
 
-	found := false
-	var newDefault string
+	// First verify the target subscription exists
+	var targetIndex = -1
 	for i, sub := range config.Subscriptions {
-		if sub.IsDefault {
-			c.logger.Debug("clearing default from subscription: %s", sub.Name)
-			config.Subscriptions[i].IsDefault = false
-		}
 		if sub.ID == subscriptionID {
-			c.logger.Debug("setting new default subscription: %s", sub.Name)
-			config.Subscriptions[i].IsDefault = true
-			found = true
-			newDefault = sub.Name
+			targetIndex = i
+			break
 		}
 	}
 
-	if !found {
+	if targetIndex == -1 {
 		c.logger.Error("subscription %s not found in configuration", subscriptionID)
 		return pkgerrors.ErrSubscriptionNotFound
 	}
+
+	// Now that we know the target exists, safely update the default flags
+	for i := range config.Subscriptions {
+		if config.Subscriptions[i].IsDefault {
+			c.logger.Debug("clearing default from subscription: %s", config.Subscriptions[i].Name)
+			config.Subscriptions[i].IsDefault = false
+		}
+	}
+
+	c.logger.Debug("setting new default subscription: %s", config.Subscriptions[targetIndex].Name)
+	config.Subscriptions[targetIndex].IsDefault = true
 
 	c.logger.Debug("writing updated configuration")
 	if err := c.storage.WriteConfig(config); err != nil {
@@ -103,7 +108,7 @@ func (c *ConfigurationAdapter) SetContext(subscriptionID uuid.UUID) error {
 		return pkgerrors.WrapError("writing configuration", err)
 	}
 
-	c.logger.Success("switched context to: %s (%s)", newDefault, subscriptionID)
+	c.logger.Success("switched context to: %s (%s)", config.Subscriptions[targetIndex].Name, subscriptionID)
 	return nil
 }
 
@@ -220,18 +225,22 @@ func (c *ConfigurationAdapter) GetTenantManager() (*tenant.Manager, error) {
 
 // SaveTenantName saves a custom name for a tenant
 func (c *ConfigurationAdapter) SaveTenantName(id uuid.UUID, name string) error {
-	tm, err := c.GetTenantManager()
+	// Read the latest configuration
+	config, err := c.storage.ReadConfig()
 	if err != nil {
-		return err
+		c.logger.Error("failed to read configuration: %v", err)
+		return pkgerrors.WrapError("reading configuration", err)
 	}
 
+	// Create tenant manager with the latest configuration
+	tm := tenant.Manager{BaseManager: types.BaseManager{Configuration: config}}
 	if err := tm.SaveTenantName(id, name); err != nil {
 		c.logger.Error("failed to save tenant name: %v", err)
 		return pkgerrors.WrapError("saving tenant name", err)
 	}
 
 	// Write the updated configuration back
-	if err := c.storage.WriteConfig(tm.Configuration); err != nil {
+	if err := c.storage.WriteConfig(config); err != nil {
 		c.logger.Error("failed to write configuration: %v", err)
 		return pkgerrors.WrapError("writing configuration", err)
 	}
