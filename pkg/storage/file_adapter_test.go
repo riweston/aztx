@@ -1,12 +1,14 @@
 package storage
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/riweston/aztx/pkg/errors"
+	pkgerrors "github.com/riweston/aztx/pkg/errors"
 	"github.com/riweston/aztx/pkg/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -66,13 +68,13 @@ func TestFileAdapter_Read(t *testing.T) {
 			name:    "empty path returns error",
 			path:    "",
 			want:    nil,
-			wantErr: errors.ErrPathIsEmpty,
+			wantErr: pkgerrors.ErrPathIsEmpty,
 		},
 		{
 			name:    "non-existent file returns error",
 			path:    filepath.Join(tmpDir, "nonexistent.json"),
 			want:    nil,
-			wantErr: errors.ErrFileDoesNotExist,
+			wantErr: pkgerrors.ErrFileDoesNotExist,
 		},
 		{
 			name:    "existing file returns content",
@@ -141,19 +143,19 @@ func TestFileAdapter_ReadConfig(t *testing.T) {
 			name:    "empty path returns error",
 			path:    "",
 			want:    nil,
-			wantErr: errors.ErrPathIsEmpty,
+			wantErr: pkgerrors.ErrPathIsEmpty,
 		},
 		{
 			name:    "non-existent file returns error",
 			path:    filepath.Join(tmpDir, "nonexistent.json"),
 			want:    nil,
-			wantErr: errors.ErrFileDoesNotExist,
+			wantErr: pkgerrors.ErrFileDoesNotExist,
 		},
 		{
 			name:    "invalid JSON returns error",
 			path:    invalidFile,
 			want:    nil,
-			wantErr: errors.ErrUnmarshallingJSON(nil),
+			wantErr: pkgerrors.ErrFileOperation("unmarshaling", errors.New("invalid character 'i' looking for beginning of value")),
 		},
 		{
 			name:    "valid config file returns configuration",
@@ -169,16 +171,19 @@ func TestFileAdapter_ReadConfig(t *testing.T) {
 			got, err := fa.ReadConfig()
 
 			if tt.wantErr != nil {
-				if tt.wantErr == errors.ErrUnmarshallingJSON(nil) {
-					// Special case for JSON unmarshalling errors
-					assert.Error(t, err)
+				if strings.Contains(tt.wantErr.Error(), "error unmarshaling file") {
+					// For JSON unmarshalling errors, just check that the error message contains the expected prefix
+					assert.Contains(t, err.Error(), "error unmarshaling file")
 				} else {
 					assert.ErrorIs(t, err, tt.wantErr)
 				}
 				assert.Nil(t, got)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got)
+				// Use ElementsMatch for slice comparisons to handle nil vs empty slice
+				assert.Equal(t, tt.want.InstallationID, got.InstallationID)
+				assert.ElementsMatch(t, tt.want.Tenants, got.Tenants)
+				assert.ElementsMatch(t, tt.want.Subscriptions, got.Subscriptions)
 			}
 		})
 	}
