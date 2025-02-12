@@ -128,8 +128,18 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().String("log-level", "info", "Set log level (debug, info, warn, error)")
 	rootCmd.Flags().Bool("by-tenant", false, "Select tenant before choosing subscription")
-	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
-	viper.BindPFlag("by-tenant", rootCmd.Flags().Lookup("by-tenant"))
+
+	// Bind flags to viper and check for errors
+	if err := viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level")); err != nil {
+		logger := profile.NewLogger("error")
+		logger.Error("Failed to bind log-level flag: %v", err)
+		os.Exit(1)
+	}
+	if err := viper.BindPFlag("by-tenant", rootCmd.Flags().Lookup("by-tenant")); err != nil {
+		logger := profile.NewLogger("error")
+		logger.Error("Failed to bind by-tenant flag: %v", err)
+		os.Exit(1)
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.
