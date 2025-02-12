@@ -2,10 +2,12 @@ package profile
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/riweston/aztx/pkg/errors"
+	"github.com/ktr0731/go-fuzzyfinder"
+	pkgerrors "github.com/riweston/aztx/pkg/errors"
 	"github.com/riweston/aztx/pkg/state"
 	"github.com/riweston/aztx/pkg/subscription"
 	"github.com/riweston/aztx/pkg/tenant"
@@ -27,50 +29,52 @@ func NewConfigurationAdapter(storage StorageAdapter, logger Logger) *Configurati
 func (c *ConfigurationAdapter) SelectWithFinder() (*types.Subscription, error) {
 	if c.storage == nil {
 		c.logger.Error("storage adapter is nil")
-		return nil, errors.ErrEmptyConfiguration
+		return nil, pkgerrors.ErrEmptyConfiguration
 	}
 
 	c.logger.Debug("reading azure profile configuration")
 	config, err := c.storage.ReadConfig()
 	if err != nil {
 		c.logger.Error("failed to read configuration: %v", err)
-		return nil, errors.WrapError("reading configuration", err)
+		return nil, pkgerrors.WrapError("reading configuration", err)
 	}
 
 	if len(config.Subscriptions) == 0 {
 		c.logger.Warn("no subscriptions found in configuration")
-		return nil, errors.ErrEmptyConfiguration
+		return nil, pkgerrors.ErrEmptyConfiguration
 	}
 
 	c.logger.Debug("initiating subscription selection with fuzzy finder")
-	subManager := subscription.Manager{Configuration: config}
+	subManager := subscription.Manager{BaseManager: types.BaseManager{Configuration: config}}
 	idx, err := subManager.FindSubscriptionIndex()
 	if err != nil {
+		if errors.Is(err, fuzzyfinder.ErrAbort) {
+			return nil, err
+		}
 		c.logger.Error("failed to get subscription selection: %v", err)
-		return nil, errors.WrapError("finding subscription", err)
+		return nil, pkgerrors.WrapError("finding subscription", err)
 	}
 
 	if idx < 0 || idx >= len(config.Subscriptions) {
 		c.logger.Error("selected subscription index %d is out of bounds", idx)
-		return nil, errors.ErrSubscriptionNotFound
+		return nil, pkgerrors.ErrSubscriptionNotFound
 	}
 
 	selected := &config.Subscriptions[idx]
-	c.logger.Info("selected subscription: %s (%s)", selected.Name, selected.ID)
 	return selected, nil
 }
 
 func (c *ConfigurationAdapter) SetContext(subscriptionID uuid.UUID) error {
 	if subscriptionID == uuid.Nil {
 		c.logger.Error("invalid subscription ID provided")
-		return errors.ErrInvalidSubscriptionID
+		return pkgerrors.ErrInvalidSubscriptionID
 	}
 
 	c.logger.Debug("reading configuration to update context")
 	config, err := c.storage.ReadConfig()
 	if err != nil {
 		c.logger.Error("failed to read configuration: %v", err)
-		return errors.WrapError("reading configuration", err)
+		return pkgerrors.WrapError("reading configuration", err)
 	}
 
 	found := false
@@ -90,36 +94,36 @@ func (c *ConfigurationAdapter) SetContext(subscriptionID uuid.UUID) error {
 
 	if !found {
 		c.logger.Error("subscription %s not found in configuration", subscriptionID)
-		return errors.ErrSubscriptionNotFound
+		return pkgerrors.ErrSubscriptionNotFound
 	}
 
 	c.logger.Debug("writing updated configuration")
 	if err := c.storage.WriteConfig(config); err != nil {
 		c.logger.Error("failed to write configuration: %v", err)
-		return errors.WrapError("writing configuration", err)
+		return pkgerrors.WrapError("writing configuration", err)
 	}
 
-	c.logger.Info("successfully switched context to: %s", newDefault)
+	c.logger.Success("switched context to: %s (%s)", newDefault, subscriptionID)
 	return nil
 }
 
 func (c *ConfigurationAdapter) SetPreviousContext(state state.StateManager) error {
 	if state == nil {
 		c.logger.Error("state manager is nil")
-		return errors.ErrInvalidContext
+		return pkgerrors.ErrInvalidContext
 	}
 
 	lastId, lastName := state.GetLastContext()
 	if lastId == "" || lastName == "" {
 		c.logger.Warn("no previous context found")
-		return errors.ErrNoPreviousContext
+		return pkgerrors.ErrNoPreviousContext
 	}
 
 	c.logger.Debug("reading configuration to switch to previous context")
 	config, err := c.storage.ReadConfig()
 	if err != nil {
 		c.logger.Error("failed to read configuration: %v", err)
-		return errors.WrapError("reading configuration", err)
+		return pkgerrors.WrapError("reading configuration", err)
 	}
 
 	var currentDefault *types.Subscription
@@ -132,46 +136,46 @@ func (c *ConfigurationAdapter) SetPreviousContext(state state.StateManager) erro
 
 	if currentDefault == nil {
 		c.logger.Error("no default subscription found in configuration")
-		return errors.ErrNoDefaultSubscription
+		return pkgerrors.ErrNoDefaultSubscription
 	}
 
 	c.logger.Debug("saving current context: %s", currentDefault.Name)
 	if err := state.SetLastContext(currentDefault.ID.String(), currentDefault.Name); err != nil {
 		c.logger.Error("failed to save current context: %v", err)
-		return errors.WrapError("saving last context", err)
+		return pkgerrors.WrapError("saving last context", err)
 	}
 
 	id, err := uuid.Parse(lastId)
 	if err != nil {
 		c.logger.Error("failed to parse previous subscription ID: %v", err)
-		return errors.WrapError("parsing subscription ID", err)
+		return pkgerrors.WrapError("parsing subscription ID", err)
 	}
 
-	c.logger.Info("switching to previous context: %s", lastName)
+	c.logger.Debug("switching to previous context: %s", lastName)
 	return c.SetContext(id)
 }
 
 func (c *ConfigurationAdapter) SaveTenant(id uuid.UUID, name string) error {
 	if id == uuid.Nil {
-		return errors.ErrInvalidTenantID
+		return pkgerrors.ErrInvalidTenantID
 	}
 
 	if name == "" {
-		return errors.ErrEmptyTenantName
+		return pkgerrors.ErrEmptyTenantName
 	}
 
 	config, err := c.storage.ReadConfig()
 	if err != nil {
-		return errors.WrapError("reading configuration", err)
+		return pkgerrors.WrapError("reading configuration", err)
 	}
 
-	tenantManager := tenant.Manager{Configuration: config}
+	tenantManager := tenant.Manager{BaseManager: types.BaseManager{Configuration: config}}
 	if err := tenantManager.SaveTenantName(id, name); err != nil {
-		return errors.WrapError("saving tenant name", err)
+		return pkgerrors.WrapError("saving tenant name", err)
 	}
 
 	if err := c.storage.WriteConfig(config); err != nil {
-		return errors.WrapError("writing configuration", err)
+		return pkgerrors.WrapError("writing configuration", err)
 	}
 
 	return nil
@@ -202,4 +206,36 @@ func (c *ConfigurationAdapter) SetContextWithTimeout(subscriptionID uuid.UUID, t
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+// GetTenantManager returns a tenant manager instance
+func (c *ConfigurationAdapter) GetTenantManager() (*tenant.Manager, error) {
+	config, err := c.storage.ReadConfig()
+	if err != nil {
+		c.logger.Error("failed to read configuration: %v", err)
+		return nil, pkgerrors.WrapError("reading configuration", err)
+	}
+	return &tenant.Manager{BaseManager: types.BaseManager{Configuration: config}}, nil
+}
+
+// SaveTenantName saves a custom name for a tenant
+func (c *ConfigurationAdapter) SaveTenantName(id uuid.UUID, name string) error {
+	tm, err := c.GetTenantManager()
+	if err != nil {
+		return err
+	}
+
+	if err := tm.SaveTenantName(id, name); err != nil {
+		c.logger.Error("failed to save tenant name: %v", err)
+		return pkgerrors.WrapError("saving tenant name", err)
+	}
+
+	// Write the updated configuration back
+	if err := c.storage.WriteConfig(tm.Configuration); err != nil {
+		c.logger.Error("failed to write configuration: %v", err)
+		return pkgerrors.WrapError("writing configuration", err)
+	}
+
+	c.logger.Success("saved custom name '%s' for tenant %s", name, id)
+	return nil
 }

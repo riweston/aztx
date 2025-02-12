@@ -5,6 +5,10 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 type LogLevel int
@@ -16,25 +20,45 @@ const (
 	LevelError
 )
 
+var (
+	// Style definitions
+	successStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("2")).
+			Bold(true)
+
+	infoStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("12"))
+
+	warnStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("3")).
+			Bold(true)
+
+	errorStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("1")).
+			Bold(true)
+
+	debugStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("8"))
+)
+
 type DefaultLogger struct {
+	logger *log.Logger
 	level  LogLevel
 	writer io.Writer
 }
 
 func NewLogger(level string) *DefaultLogger {
-	// Check for AZTX_LOG_FILE environment variable
-	logFile := os.Getenv("AZTX_LOG_FILE")
-	var writer io.Writer = os.Stderr
-
-	if logFile != "" {
-		if f, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
-			writer = f
-		}
-	}
+	logger := log.NewWithOptions(os.Stderr, log.Options{
+		ReportCaller:    true,
+		ReportTimestamp: true,
+		TimeFormat:      time.Kitchen,
+		Prefix:          "aztx",
+	})
 
 	return &DefaultLogger{
+		logger: logger,
 		level:  parseLevel(level),
-		writer: writer,
+		writer: os.Stderr,
 	}
 }
 
@@ -53,29 +77,45 @@ func parseLevel(level string) LogLevel {
 	}
 }
 
-func (l *DefaultLogger) log(level LogLevel, msg string, args ...interface{}) {
-	if level < l.level {
-		return
+func (l *DefaultLogger) formatMessage(msg string, args ...interface{}) string {
+	if len(args) > 0 {
+		return fmt.Sprintf(msg, args...)
 	}
-
-	levelStr := [...]string{"DEBUG", "INFO", "WARN", "ERROR"}
-	formatted := fmt.Sprintf(msg, args...)
-	logLine := fmt.Sprintf("[AZTX][%s] %s\n", levelStr[level], formatted)
-	fmt.Fprint(l.writer, logLine)
+	return msg
 }
 
 func (l *DefaultLogger) Debug(msg string, args ...interface{}) {
-	l.log(LevelDebug, msg, args...)
+	if l.level <= LevelDebug {
+		formattedMsg := l.formatMessage(msg, args...)
+		l.logger.Debug(debugStyle.Render(formattedMsg))
+	}
 }
 
 func (l *DefaultLogger) Info(msg string, args ...interface{}) {
-	l.log(LevelInfo, msg, args...)
+	if l.level <= LevelInfo {
+		formattedMsg := l.formatMessage(msg, args...)
+		// For Info, we'll use a simpler, user-friendly output
+		fmt.Println(infoStyle.Render(formattedMsg))
+	}
+}
+
+func (l *DefaultLogger) Success(msg string, args ...interface{}) {
+	if l.level <= LevelInfo {
+		formattedMsg := l.formatMessage(msg, args...)
+		fmt.Println(successStyle.Render(formattedMsg))
+	}
 }
 
 func (l *DefaultLogger) Warn(msg string, args ...interface{}) {
-	l.log(LevelWarn, msg, args...)
+	if l.level <= LevelWarn {
+		formattedMsg := l.formatMessage(msg, args...)
+		l.logger.Warn(warnStyle.Render(formattedMsg))
+	}
 }
 
 func (l *DefaultLogger) Error(msg string, args ...interface{}) {
-	l.log(LevelError, msg, args...)
+	if l.level <= LevelError {
+		formattedMsg := l.formatMessage(msg, args...)
+		l.logger.Error(errorStyle.Render(formattedMsg))
+	}
 }

@@ -68,7 +68,7 @@ func (u *UserProfileFileAdapter) GetTenants() ([]types.Tenant, error) {
 		}
 	}
 
-	tenantManager := tenant.Manager{Configuration: u.configuration}
+	tenantManager := tenant.Manager{BaseManager: types.BaseManager{Configuration: u.configuration}}
 	return tenantManager.GetTenants()
 }
 
@@ -79,6 +79,6 @@ func (u *UserProfileFileAdapter) SaveTenantName(id uuid.UUID, customName string)
 		}
 	}
 
-	tenantManager := tenant.Manager{Configuration: u.configuration}
+	tenantManager := tenant.Manager{BaseManager: types.BaseManager{Configuration: u.configuration}}
 	return tenantManager.SaveTenantName(id, customName)
 }

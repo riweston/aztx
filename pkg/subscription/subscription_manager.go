@@ -1,18 +1,16 @@
 package subscription
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/ktr0731/go-fuzzyfinder"
+	pkgerrors "github.com/riweston/aztx/pkg/errors"
+	"github.com/riweston/aztx/pkg/finder"
 	"github.com/riweston/aztx/pkg/types"
 )
 
-var ErrSubscriptionNotFound = errors.New("subscription not found")
-
 type Manager struct {
-	Configuration *types.Configuration
+	types.BaseManager
 }
 
 // SetDefaultSubscription marks a subscription as default by its UUID.
@@ -27,42 +25,66 @@ func (sm *Manager) SetDefaultSubscription(subscriptionID uuid.UUID) error {
 	return nil
 }
 
-// FindSubscription searches for a subscription by name and returns its index.
+// FindSubscription searches for a subscription by name and returns it.
 func (sm *Manager) FindSubscription(name string) (*types.Subscription, error) {
 	for _, sub := range sm.Configuration.Subscriptions {
 		if sub.Name == name {
 			return &sub, nil
 		}
 	}
-	return nil, ErrSubscriptionNotFound
+	return nil, pkgerrors.ErrSubscriptionNotFound
 }
 
 // FindSubscriptionIndex uses fuzzy finding to let user select a subscription
 func (sm *Manager) FindSubscriptionIndex() (int, error) {
-	items := make([]string, len(sm.Configuration.Subscriptions))
-	for i, sub := range sm.Configuration.Subscriptions {
-		items[i] = fmt.Sprintf("%s (%s)", sub.Name, sub.ID)
+	if len(sm.Configuration.Subscriptions) == 0 {
+		return -1, pkgerrors.ErrSubscriptionNotFound
 	}
 
-	idx, err := fuzzyfinder.Find(
-		items,
-		func(i int) string {
-			return items[i]
-		},
-	)
+	sub, err := finder.Fuzzy(sm.Configuration.Subscriptions, func(s types.Subscription) string {
+		return fmt.Sprintf("%s (%s)", s.Name, s.ID)
+	})
 	if err != nil {
 		return -1, err
 	}
 
-	return idx, nil
+	// Find the index of the selected subscription
+	for i, s := range sm.Configuration.Subscriptions {
+		if s.ID == sub.ID {
+			return i, nil
+		}
+	}
+
+	return -1, pkgerrors.ErrSubscriptionNotFound
 }
 
 // FindSubscriptionByID finds a subscription by its ID
 func (sm *Manager) FindSubscriptionByID(id uuid.UUID) (*types.Subscription, error) {
+	return finder.ByID(sm.Configuration.Subscriptions, id)
+}
+
+// FindSubscriptionsByTenant returns subscriptions filtered by tenant ID
+func (sm *Manager) FindSubscriptionsByTenant(tenantID uuid.UUID) ([]types.Subscription, error) {
+	var tenantSubs []types.Subscription
 	for _, sub := range sm.Configuration.Subscriptions {
-		if sub.ID == id {
-			return &sub, nil
+		if sub.TenantID == tenantID {
+			tenantSubs = append(tenantSubs, sub)
 		}
 	}
-	return nil, ErrSubscriptionNotFound
+	if len(tenantSubs) == 0 {
+		return nil, pkgerrors.ErrSubscriptionNotFound
+	}
+	return tenantSubs, nil
+}
+
+// FindSubscriptionIndexByTenant uses fuzzy finding to select a subscription from a specific tenant
+func (sm *Manager) FindSubscriptionIndexByTenant(tenantID uuid.UUID) (*types.Subscription, error) {
+	subs, err := sm.FindSubscriptionsByTenant(tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	return finder.Fuzzy(subs, func(s types.Subscription) string {
+		return fmt.Sprintf("%s (%s)", s.Name, s.ID)
+	})
 }

@@ -10,6 +10,8 @@ require (
 	github.com/riweston/aztx/pkg/subscription v0.0.0
 	github.com/riweston/aztx/pkg/tenant v0.0.0
 	github.com/riweston/aztx/pkg/types v0.0.0
+	github.com/charmbracelet/lipgloss v0.9.1
+	github.com/charmbracelet/log v0.3.1
 )
 
 replace (
