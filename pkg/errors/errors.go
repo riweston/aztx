@@ -53,11 +53,6 @@ var (
 		return fmt.Errorf("error during %s: %w", op, err)
 	}
 
-	// ErrGettingHomeDirectory wraps errors that occur while getting the home directory
-	ErrGettingHomeDirectory = func(err error) error {
-		return fmt.Errorf("error getting home directory: %w", err)
-	}
-
 	// ErrMarshallingJSON wraps errors that occur during JSON marshalling
 	ErrMarshallingJSON = func(err error) error {
 		return fmt.Errorf("error marshalling JSON: %w", err)
@@ -88,11 +83,6 @@ var (
 		return fmt.Errorf("error setting previous context: %w", err)
 	}
 
-	// ErrFetchingUserProfile wraps errors that occur while fetching user profiles
-	ErrFetchingUserProfile = func(err error) error {
-		return fmt.Errorf("error fetching user profile: %w", err)
-	}
-
 	// Context validation errors
 
 	// ErrInvalidContext is returned when a context is missing required fields
@@ -113,15 +103,6 @@ var (
 	ErrInvalidTenantID = errors.New("invalid tenant ID format")
 	// ErrEmptyTenantName is returned when a tenant name is empty
 	ErrEmptyTenantName = errors.New("tenant name cannot be empty")
-
-	// Environment and user errors
-
-	// ErrInvalidEnvironmentName is returned when an environment name is invalid
-	ErrInvalidEnvironmentName = errors.New("invalid environment name")
-	// ErrInvalidUserType is returned when a user type is invalid
-	ErrInvalidUserType = errors.New("invalid user type")
-	// ErrDuplicateTenant is returned when attempting to add a duplicate tenant
-	ErrDuplicateTenant = errors.New("tenant already exists")
 
 	// Tenant operation errors
 
