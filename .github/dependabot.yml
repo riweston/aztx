@@ -4,7 +4,27 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    auto-merge: true
+    labels:
+      - patch
+      - dependencies
+    open-pull-requests-limit: 10
+    pull-request-branch-name:
+      separator: "-"
+    commit-message:
+      prefix: "fix"
+      include: "scope"
   - package-ecosystem: github-actions
     directory: .github/workflows
     schedule:
       interval: weekly
+    auto-merge: true
+    labels:
+      - patch
+      - dependencies
+    open-pull-requests-limit: 10
+    pull-request-branch-name:
+      separator: "-"
+    commit-message:
+      prefix: "fix"
+      include: "scope"

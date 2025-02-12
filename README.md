@@ -1,4 +1,4 @@
-# aztx - Azure Tenant Context Switcher
+# aztx - Azure-CLI Context Switcher
 
 `aztx` is a command-line tool designed to streamline the management of Azure tenant and subscription contexts. It provides an intuitive fuzzy-finder interface for switching between Azure subscriptions and tenants, making it easier to work with multiple Azure environments.
 
@@ -77,6 +77,9 @@ Configuration is stored in `~/.aztx.yml`. The following options are available:
 ```yaml
 # Log level: debug, info, warn, error
 log-level: info
+
+# by-tenant: true, false
+by-tenant: false
 ```
 
 You can also set configuration via environment variables:
