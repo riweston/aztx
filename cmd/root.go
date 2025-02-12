@@ -19,15 +19,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+// Package cmd provides the command-line interface for the aztx application.
+// It implements the core functionality for switching between Azure tenants and subscriptions
+// using a fuzzy finder interface.
 package cmd
 
 import (
 	"errors"
-	"fmt"
-	"github.com/ktr0731/go-fuzzyfinder"
-	"github.com/riweston/aztx/pkg/profile"
-	 "github.com/riweston/aztx/pkg/state"
 	"os"
+	"strings"
+
+	"github.com/ktr0731/go-fuzzyfinder"
+	pkgerrors "github.com/riweston/aztx/pkg/errors"
+	"github.com/riweston/aztx/pkg/profile"
+	"github.com/riweston/aztx/pkg/state"
+	"github.com/riweston/aztx/pkg/storage"
+	"github.com/riweston/aztx/pkg/subscription"
+	"github.com/riweston/aztx/pkg/tenant"
+	"github.com/riweston/aztx/pkg/types"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -36,84 +45,133 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "aztx",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Azure Tenant Context Switcher",
+	Long: `aztx is a command line tool that helps you switch between Azure tenants and subscriptions.
+It provides a fuzzy finder interface to select subscriptions and remembers your last context.`,
 	Args: cobra.MaximumNArgs(1),
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	Run: func(cmd *cobra.Command, args []string) {
-		cfg := state.ViperAdapter{Viper: viper.GetViper()}
-		lc := state.NewStateReaderWriter(&cfg)
-		userProfileAdapter := profile.UserProfileFileAdapter{}
-		c := profile.NewConfigurationAdapter(&userProfileAdapter)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		stateManager := state.NewViperStateManager(viper.GetViper())
+		storage := storage.FileAdapter{}
+		if err := storage.FetchDefaultPath("/.azure/azureProfile.json"); err != nil {
+			return pkgerrors.ErrFileOperation("fetching default profile path", err)
+		}
 
-		if len(args) > 0 {
-			if args[0] == "-" {
-				if err := c.SetPreviousContext(lc); err != nil {
-					fmt.Println(err)
-					os.Exit(1)
-				} else {
-					os.Exit(0)
+		logger := profile.NewLogger(viper.GetString("log-level"))
+		cfg, err := storage.ReadConfig()
+		if err != nil {
+			return pkgerrors.ErrReadingConfiguration(err)
+		}
+
+		if len(args) > 0 && args[0] == "-" {
+			adapter := profile.NewConfigurationAdapter(&storage, logger)
+			if err := adapter.SetPreviousContext(stateManager); err != nil {
+				return pkgerrors.ErrSettingPreviousContext(err)
+			}
+			return nil
+		}
+
+		// Check if tenant selection is requested
+		if viper.GetBool("by-tenant") {
+			tenantManager := tenant.Manager{BaseManager: types.BaseManager{Configuration: cfg}}
+			selectedTenant, err := tenantManager.FindTenantIndex()
+			if err != nil {
+				if errors.Is(err, fuzzyfinder.ErrAbort) {
+					return nil
 				}
+				return pkgerrors.ErrTenantOperation("selecting tenant", err)
 			}
 
+			subManager := subscription.Manager{BaseManager: types.BaseManager{Configuration: cfg}}
+			sub, err := subManager.FindSubscriptionIndexByTenant(selectedTenant.ID)
+			if err != nil {
+				if errors.Is(err, fuzzyfinder.ErrAbort) {
+					return nil
+				}
+				return pkgerrors.ErrSelectingSubscription(err)
+			}
+
+			adapter := profile.NewConfigurationAdapter(&storage, logger)
+			if err := adapter.SetContext(sub.ID); err != nil {
+				return pkgerrors.ErrOperation("setting context", err)
+			}
+			return nil
 		}
-		ac, err := c.SelectWithFinder()
-		if errors.Is(err, fuzzyfinder.ErrAbort) {
-			os.Exit(0)
-		}
+
+		// Default subscription selection
+		adapter := profile.NewConfigurationAdapter(&storage, logger)
+		sub, err := adapter.SelectWithFinder()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			if errors.Is(err, fuzzyfinder.ErrAbort) {
+				return nil
+			}
+			return pkgerrors.ErrSelectingSubscription(err)
 		}
-		if err := c.SetContext(lc, ac); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+
+		if err := adapter.SetContext(sub.ID); err != nil {
+			return pkgerrors.ErrOperation("setting context", err)
 		}
+
+		return nil
 	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
+// It is called by main.main() and only needs to happen once to the rootCmd.
+// Returns an error if the command execution fails.
+func Execute() error {
+	return rootCmd.Execute()
+}
+
+// init initializes the command configuration by setting up flags and binding them to viper.
+// It is automatically called by cobra during command initialization.
+func init() {
+	cobra.OnInitialize(initConfig)
+	rootCmd.PersistentFlags().String("log-level", "info", "Set log level (debug, info, warn, error)")
+	rootCmd.Flags().Bool("by-tenant", false, "Select tenant before choosing subscription")
+
+	// Bind flags to viper and check for errors
+	if err := viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level")); err != nil {
+		logger := profile.NewLogger("error")
+		logger.Error("Failed to bind log-level flag: %v", err)
+		os.Exit(1)
+	}
+	if err := viper.BindPFlag("by-tenant", rootCmd.Flags().Lookup("by-tenant")); err != nil {
+		logger := profile.NewLogger("error")
+		logger.Error("Failed to bind by-tenant flag: %v", err)
 		os.Exit(1)
 	}
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
 // initConfig reads in config file and ENV variables if set.
+// It looks for a .aztx.yml file in the user's home directory and creates one if it doesn't exist.
+// The function will exit with status code 1 if there are any errors accessing the home directory
+// or handling the configuration file.
 func initConfig() {
-
-	// Find home directory.
 	home, err := os.UserHomeDir()
-	cobra.CheckErr(err)
+	if err != nil {
+		logger := profile.NewLogger("error")
+		logger.Error("Failed to get home directory: %v", err)
+		os.Exit(1)
+	}
 
-	// Search config in home directory with name ".aztx" (without extension).
 	viper.AddConfigPath(home)
 	viper.SetConfigType("yml")
 	viper.SetConfigName(".aztx")
+	viper.SetEnvPrefix("AZTX")
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	viper.AutomaticEnv()
+
+	// Create config if it doesn't exist
 	if err := viper.ReadInConfig(); err != nil {
-		// If the config file doesn't exist, create it.
-		if err := viper.SafeWriteConfigAs(home + "/.aztx.yml"); err != nil {
-			fmt.Println("Can't write config:", err)
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			if err := viper.SafeWriteConfigAs(home + "/.aztx.yml"); err != nil {
+				logger := profile.NewLogger("error")
+				logger.Error("Failed to write config: %v", err)
+				os.Exit(1)
+			}
+		} else {
+			logger := profile.NewLogger("error")
+			logger.Error("Failed to read config: %v", err)
 			os.Exit(1)
 		}
 	}

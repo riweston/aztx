@@ -3,44 +3,72 @@
   "subscriptions": [
     {
       "id": "9e7969ef-4cb8-4a2d-959f-bfdaae452a3d",
-      "name": "A reeeeeally long subscription name that might be truncated.",
+      "name": "Production Workloads",
       "state": "Enabled",
       "user": {
-        "name": "First Last",
+        "name": "Contoso Ltd",
         "type": "user"
       },
       "isDefault": false,
-      "tenantId": "9e7969ef-4cb8-4a2d-959f-bfdaae452a3d",
+      "tenantId": "11111111-1111-1111-1111-111111111111",
       "environmentName": "AzureCloud",
-      "homeTenantId": "9e7969ef-4cb8-4a2d-959f-bfdaae452a3d",
+      "homeTenantId": "11111111-1111-1111-1111-111111111111",
+      "managedByTenants": []
+    },
+    {
+      "id": "8aa89ebb-5735-4d1b-9c5c-a8f32a858e99",
+      "name": "Development Environment",
+      "state": "Enabled",
+      "user": {
+        "name": "Contoso Ltd",
+        "type": "user"
+      },
+      "isDefault": false,
+      "tenantId": "11111111-1111-1111-1111-111111111111",
+      "environmentName": "AzureCloud",
+      "homeTenantId": "11111111-1111-1111-1111-111111111111",
       "managedByTenants": []
     },
     {
       "id": "9bb28eee-ebaa-442a-83ba-5511810fb151",
-      "name": "Test Subscription 2",
+      "name": "Fabrikam Production",
       "state": "Enabled",
       "user": {
-        "name": "First Last",
+        "name": "Fabrikam Inc",
         "type": "user"
       },
       "isDefault": false,
-      "tenantId": "9bb28eee-ebaa-442a-83ba-5511810fb151",
+      "tenantId": "22222222-2222-2222-2222-222222222222",
       "environmentName": "AzureCloud",
-      "homeTenantId": "9bb28eee-ebaa-442a-83ba-5511810fb151",
+      "homeTenantId": "22222222-2222-2222-2222-222222222222",
+      "managedByTenants": []
+    },
+    {
+      "id": "7cc65eaa-f64e-442a-8b8a-3211810ac151",
+      "name": "Fabrikam Development",
+      "state": "Enabled",
+      "user": {
+        "name": "Fabrikam Inc",
+        "type": "user"
+      },
+      "isDefault": false,
+      "tenantId": "22222222-2222-2222-2222-222222222222",
+      "environmentName": "AzureCloud",
+      "homeTenantId": "22222222-2222-2222-2222-222222222222",
       "managedByTenants": []
     },
     {
       "id": "8fff24dd-2842-4dbb-8a66-1410c7bc231f",
-      "name": "Short",
+      "name": "Acme Corp Main",
       "state": "Enabled",
       "user": {
-        "name": "First Last",
+        "name": "Acme Corporation",
         "type": "user"
       },
       "isDefault": false,
-      "tenantId": "8fff24dd-2842-4dbb-8a66-1410c7bc231f",
+      "tenantId": "33333333-3333-3333-3333-333333333333",
       "environmentName": "AzureCloud",
-      "homeTenantId": "8fff24dd-2842-4dbb-8a66-1410c7bc231f",
+      "homeTenantId": "33333333-3333-3333-3333-333333333333",
       "managedByTenants": []
     }
   ]

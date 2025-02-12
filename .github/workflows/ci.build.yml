@@ -19,6 +19,9 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ steps.go-version.outputs.latest }}
+      - name: Run Tests
+        run: |
+          go test -v -race ./...
       - name: Build a test release
         run: |
           go build .

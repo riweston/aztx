@@ -1,2 +1,12 @@
-go 1.22
-use .
+go 1.21
+
+use (
+	.
+	./pkg/errors
+	./pkg/profile
+	./pkg/state
+	./pkg/storage
+	./pkg/subscription
+	./pkg/tenant
+	./pkg/types
+)
