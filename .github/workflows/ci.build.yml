@@ -21,12 +21,7 @@ jobs:
           go-version: ${{ steps.go-version.outputs.latest }}
       - name: Run Tests
         run: |
-          go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.txt
-          fail_ci_if_error: true
+          go test -v -race ./...
       - name: Build a test release
         run: |
           go build .
