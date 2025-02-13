@@ -41,6 +41,12 @@ scoop update
 scoop install riweston/aztx
 ```
 
+### [winget](https://learn.microsoft.com/en-us/windows/package-manager/winget/) (Windows)
+
+```sh
+winget install riweston.aztx
+```
+
 ### Download Prebuilt Binary
 
 Download the latest release from the [releases page](https://github.com/riweston/aztx/releases) and add it to your PATH.
