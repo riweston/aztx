@@ -44,7 +44,7 @@ scoop install riweston/aztx
 ### [winget](https://learn.microsoft.com/en-us/windows/package-manager/winget/) (Windows)
 
 ```sh
-winget install riweston.aztx
+winget install aztx
 ```
 
 ### Download Prebuilt Binary
