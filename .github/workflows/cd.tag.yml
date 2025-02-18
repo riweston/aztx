@@ -37,5 +37,6 @@ jobs:
       - name: Bump version and push tag (dry run)
         uses: anothrNick/github-tag-action@1.71.0
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WITH_V: false
           DRY_RUN: true
