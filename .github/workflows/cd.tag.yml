@@ -1,42 +1,84 @@
----
-name: "Continuous Deployment: Tag Release"
-
+name: Pull Request Action
 on:
   pull_request:
-    branches:
-      - master
-    # types:
-    #   - closed
+    types: [labeled, unlabeled, closed]
+
+# Allow a subsequently queued workflow run to interrupt a previous run
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
 
 jobs:
-  goreleaser:
-    name: "CD: Release"
+  test-semver:
+    # Only run on merged PRs to master/main or when labels change
+    if: |
+      (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master') ||
+      (github.event.action == 'labeled' || github.event.action == 'unlabeled')
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Added debug step
-      - name: Debug Event
+      # Debug step to verify PR state and labels
+      - name: Debug PR Context
         run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "Action: ${{ github.event.action }}"
-          echo "PR merged: ${{ github.event.pull_request.merged }}"
-          echo "Base ref: ${{ github.event.pull_request.base.ref }}"
+          echo "=== Pull Request Information ==="
+          echo "PR State:"
+          echo "  Event: ${{ github.event.action }}"
+          echo "  Merged: ${{ github.event.pull_request.merged }}"
+          echo "  Base Branch: ${{ github.event.pull_request.base.ref }}"
+          echo "  Title: ${{ github.event.pull_request.title }}"
+          echo "  PR Number: ${{ github.event.pull_request.number }}"
+          echo ""
+          echo "=== Labels ==="
+          echo "${{ toJson(github.event.pull_request.labels) }}"
 
-      # Added debug step for labels
-      - name: Debug Labels
+      - name: Generate Semantic Version
+        id: semver
+        uses: rapidstack/PR-Label-Semver-Action@v1.3.6
+
+      # Enhanced debug step to verify version generation and tag simulation
+      - name: Debug Version and Simulate Tag
         run: |
-          echo "Labels: ${{ toJson(github.event.pull_request.labels) }}"
-          echo "Label names: ${{ join(github.event.pull_request.labels.*.name, ', ') }}"
+          echo "=== Version Information ==="
+          echo "Generated Version: ${{ steps.semver.outputs.string }}"
+          echo "Current SHA: ${{ github.sha }}"
+          echo ""
+          echo "=== Tag Simulation ==="
+          echo "Would create tag: ${{ steps.semver.outputs.string }}"
+          echo "At commit: ${{ github.sha }}"
+          echo "On branch: ${{ github.event.pull_request.base.ref }}"
 
-      - name: Bump version and push tag (dry run)
-        uses: anothrNick/github-tag-action@1.71.0
+          # List existing tags for reference
+          echo ""
+          echo "=== Existing Tags ==="
+          git fetch --tags
+          git tag --list
+      # Simulate tag creation - no actual tags will be created
+      - name: Simulate Git Tag Creation
+        if: github.event.pull_request.merged == true
+        uses: actions/github-script@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: false
-          DRY_RUN: true
+          TAG: ${{ steps.semver.outputs.string }}
+        with:
+          script: |
+            const { TAG } = process.env
+
+            // Simulate tag existence check
+            try {
+              const existingTag = await github.rest.git.getRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `refs/tags/${TAG}`
+              });
+
+              console.log(`[SIMULATION] Tag ${TAG} would not be created - already exists at ${existingTag.data.object.sha}`);
+            } catch (error) {
+              // Simulate tag creation
+              console.log('[SIMULATION] Would create tag with:');
+              console.log(`  Tag: ${TAG}`);
+              console.log(`  SHA: ${context.sha}`);
+              console.log('  Status: Would succeed (simulation only)');
+            }
