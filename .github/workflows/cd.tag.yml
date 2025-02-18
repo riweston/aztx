@@ -1,0 +1,41 @@
+---
+name: "Continuous Deployment: Tag Release"
+
+on:
+  pull_request:
+    branches:
+      - master
+    # types:
+    #   - closed
+
+jobs:
+  goreleaser:
+    name: "CD: Release"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Added debug step
+      - name: Debug Event
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Action: ${{ github.event.action }}"
+          echo "PR merged: ${{ github.event.pull_request.merged }}"
+          echo "Base ref: ${{ github.event.pull_request.base.ref }}"
+
+      # Added debug step for labels
+      - name: Debug Labels
+        run: |
+          echo "Labels: ${{ toJson(github.event.pull_request.labels) }}"
+          echo "Label names: ${{ join(github.event.pull_request.labels.*.name, ', ') }}"
+
+      - name: Bump version and push tag (dry run)
+        uses: anothrNick/github-tag-action@1.71.0
+        env:
+          WITH_V: false
+          DRY_RUN: true
