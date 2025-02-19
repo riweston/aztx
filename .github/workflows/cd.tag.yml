@@ -26,7 +26,17 @@ jobs:
         id: semver
         uses: rapidstack/PR-Label-Semver-Action@v1.3.6
 
-      - name: Git Tag Creation & Push
+      - name: Debug Version Info
+        run: |
+          echo "=== Version Information ==="
+          echo "Generated Version: ${{ steps.semver.outputs.string }}"
+          echo "Current SHA: ${{ github.sha }}"
+          echo ""
+          echo "=== Existing Tags ==="
+          git fetch --tags --force
+          git tag --list
+
+      - name: Git Tag Creation
         # if: github.event.pull_request.merged == true
         uses: actions/github-script@v7.0.1
         env:
@@ -35,35 +45,41 @@ jobs:
           script: |
             const { TAG } = process.env
 
-            // Check if tag already exists
+            console.log(`Attempting to create tag: ${TAG} at SHA: ${context.sha}`);
+
             try {
-              const existingTag = await github.rest.git.getRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: `refs/tags/${TAG}`
-              });
+              // Try to get the tag first
+              try {
+                const existingTag = await github.rest.git.getRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `refs/tags/${TAG}`
+                });
+                console.log(`⚠️ Tag ${TAG} already exists at ${existingTag.data.object.sha}`);
 
-              console.log(`Tag ${TAG} already exists, skipping creation`);
-              return;
+                if (existingTag.data.object.sha === context.sha) {
+                  console.log('Tag already points to the current SHA, no action needed');
+                  return;
+                }
+
+                throw new Error('Tag exists but points to different SHA');
+              } catch (error) {
+                // 404 means tag doesn't exist, which is what we want
+                if (error.status !== 404) {
+                  throw error;
+                }
+
+                // Create new tag
+                await github.rest.git.createRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `refs/tags/${TAG}`,
+                  sha: context.sha
+                });
+
+                console.log(`✅ Successfully created tag ${TAG} at ${context.sha}`);
+              }
             } catch (error) {
-              if (error.status !== 404) throw error;
+              console.log('Error details:', error);
+              core.setFailed(`Failed to manage tag: ${error.message}`);
             }
-
-            // Create new tag
-            const createTagResponse = await github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/tags/${TAG}`,
-              sha: context.sha
-            });
-
-            // Push the tag to the repository
-            await github.rest.git.updateRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/tags/${TAG}`,
-              sha: context.sha,
-              force: true
-            });
-
-            console.log(`Created and pushed new tag: ${TAG}`);
