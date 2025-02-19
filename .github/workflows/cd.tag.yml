@@ -58,8 +58,8 @@ jobs:
           git tag --list
       # Simulate tag creation - no actual tags will be created
       - name: Simulate Git Tag Creation
-        if: github.event.pull_request.merged == true
-        uses: actions/github-script@v6
+        # if: github.event.pull_request.merged == true
+        uses: actions/github-script@v7.0.1
         env:
           TAG: ${{ steps.semver.outputs.string }}
         with:
