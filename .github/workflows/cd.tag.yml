@@ -1,4 +1,5 @@
-name: Pull Request Action
+---
+name: Pull Request Tag Creation
 on:
   pull_request:
     types: [labeled, unlabeled, closed]
@@ -21,43 +22,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Debug step to verify PR state and labels
-      - name: Debug PR Context
-        run: |
-          echo "=== Pull Request Information ==="
-          echo "PR State:"
-          echo "  Event: ${{ github.event.action }}"
-          echo "  Merged: ${{ github.event.pull_request.merged }}"
-          echo "  Base Branch: ${{ github.event.pull_request.base.ref }}"
-          echo "  Title: ${{ github.event.pull_request.title }}"
-          echo "  PR Number: ${{ github.event.pull_request.number }}"
-          echo ""
-          echo "=== Labels ==="
-          echo "${{ toJson(github.event.pull_request.labels) }}"
-
       - name: Generate Semantic Version
         id: semver
         uses: rapidstack/PR-Label-Semver-Action@v1.3.6
 
-      # Enhanced debug step to verify version generation and tag simulation
-      - name: Debug Version and Simulate Tag
-        run: |
-          echo "=== Version Information ==="
-          echo "Generated Version: ${{ steps.semver.outputs.string }}"
-          echo "Current SHA: ${{ github.sha }}"
-          echo ""
-          echo "=== Tag Simulation ==="
-          echo "Would create tag: ${{ steps.semver.outputs.string }}"
-          echo "At commit: ${{ github.sha }}"
-          echo "On branch: ${{ github.event.pull_request.base.ref }}"
-
-          # List existing tags for reference
-          echo ""
-          echo "=== Existing Tags ==="
-          git fetch --tags
-          git tag --list
-      # Simulate tag creation - no actual tags will be created
-      - name: Simulate Git Tag Creation
+      - name: Git Tag Creation & Push
         # if: github.event.pull_request.merged == true
         uses: actions/github-script@v7.0.1
         env:
@@ -66,7 +35,7 @@ jobs:
           script: |
             const { TAG } = process.env
 
-            // Simulate tag existence check
+            // Check if tag already exists
             try {
               const existingTag = await github.rest.git.getRef({
                 owner: context.repo.owner,
@@ -74,11 +43,27 @@ jobs:
                 ref: `refs/tags/${TAG}`
               });
 
-              console.log(`[SIMULATION] Tag ${TAG} would not be created - already exists at ${existingTag.data.object.sha}`);
+              console.log(`Tag ${TAG} already exists, skipping creation`);
+              return;
             } catch (error) {
-              // Simulate tag creation
-              console.log('[SIMULATION] Would create tag with:');
-              console.log(`  Tag: ${TAG}`);
-              console.log(`  SHA: ${context.sha}`);
-              console.log('  Status: Would succeed (simulation only)');
+              if (error.status !== 404) throw error;
             }
+
+            // Create new tag
+            const createTagResponse = await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/${TAG}`,
+              sha: context.sha
+            });
+
+            // Push the tag to the repository
+            await github.rest.git.updateRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/${TAG}`,
+              sha: context.sha,
+              force: true
+            });
+
+            console.log(`Created and pushed new tag: ${TAG}`);
