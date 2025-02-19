@@ -4,7 +4,6 @@ name: "Continuous Deployment: Release"
 on:
   push:
     branches:
-      # TODO: Renamed this to main to disable it running on master
       - main
 
 jobs:
