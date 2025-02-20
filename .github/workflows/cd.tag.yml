@@ -1,13 +1,7 @@
 ---
 name: Pull Request Tag Creation
 on:
-  pull_request:
-    types: [closed]
-
-# Allow a subsequently queued workflow run to interrupt a previous run
-concurrency:
-  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
-  cancel-in-progress: true
+  workflow_call:
 
 jobs:
   tag:

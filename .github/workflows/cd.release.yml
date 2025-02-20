@@ -2,16 +2,19 @@
 name: "Continuous Deployment: Release"
 
 on:
-  workflow_run:
-    workflows: ["Pull Request Tag Creation"]
-    branches:
-      - main
-    types:
-      - completed
+  pull_request:
+    types: [closed]
+
+# Allow a subsequently queued workflow run to interrupt a previous run
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
 
 jobs:
+  tag:
+    uses: ./.github/workflows/cd.tag.yml
   goreleaser:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs: tag
     name: "CD: Release"
     runs-on: ubuntu-latest
     permissions:
