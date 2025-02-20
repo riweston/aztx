@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-semver:
+  tag:
     # Only run on merged PRs to main or when labels change
     if: |
       (github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')

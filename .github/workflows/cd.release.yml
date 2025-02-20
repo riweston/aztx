@@ -2,12 +2,16 @@
 name: "Continuous Deployment: Release"
 
 on:
-  push:
+  workflow_run:
+    workflows: ["tag"]
     branches:
       - main
+    types:
+      - completed
 
 jobs:
   goreleaser:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: "CD: Release"
     runs-on: ubuntu-latest
     permissions:
