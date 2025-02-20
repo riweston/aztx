@@ -3,7 +3,7 @@ name: "Continuous Deployment: Release"
 
 on:
   workflow_run:
-    workflows: ["tag"]
+    workflows: ["Pull Request Tag Creation"]
     branches:
       - main
     types:
