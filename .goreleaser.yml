@@ -1,10 +1,13 @@
+---
+version: 2
 builds:
   - goos:
       - darwin
       - linux
       - windows
 archives:
-  - format: zip
+  - formats:
+      - zip
 brews:
   - name: aztx
     url_template: "https://github.com/riweston/aztx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
