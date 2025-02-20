@@ -16,7 +16,7 @@ jobs:
       - uses: arnested/go-version-action@v1
         id: go-version
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ steps.go-version.outputs.latest }}
       - name: Run Tests
