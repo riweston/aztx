@@ -1,11 +1,12 @@
 module github.com/riweston/aztx
 
-go 1.23.4
+go 1.24
+
 toolchain go1.24.1
 
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
-	github.com/charmbracelet/log v0.4.1
+	github.com/charmbracelet/log v0.4.2
 	github.com/google/uuid v1.6.0
 	github.com/ktr0731/go-fuzzyfinder v0.9.0
 	github.com/spf13/cobra v1.9.1
